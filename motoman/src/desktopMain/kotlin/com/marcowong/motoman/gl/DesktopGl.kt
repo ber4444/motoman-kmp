@@ -92,6 +92,20 @@ private class DesktopGl : Gl {
     override fun glGenerateMipmap(target: Int) = GL30.glGenerateMipmap(target)
     override fun glDeleteTexture(texture: Int) = GL11.glDeleteTextures(texture)
 
+    override fun glGenFramebuffer(): Int = GL30.glGenFramebuffers()
+    override fun glBindFramebuffer(target: Int, framebuffer: Int) = GL30.glBindFramebuffer(target, framebuffer)
+    override fun glDeleteFramebuffer(framebuffer: Int) = GL30.glDeleteFramebuffers(framebuffer)
+    override fun glFramebufferTexture2D(target: Int, attachment: Int, textarget: Int, texture: Int, level: Int) =
+        GL30.glFramebufferTexture2D(target, attachment, textarget, texture, level)
+    override fun glCheckFramebufferStatus(target: Int): Int = GL30.glCheckFramebufferStatus(target)
+    override fun glGenRenderbuffer(): Int = GL30.glGenRenderbuffers()
+    override fun glBindRenderbuffer(target: Int, renderbuffer: Int) = GL30.glBindRenderbuffer(target, renderbuffer)
+    override fun glDeleteRenderbuffer(renderbuffer: Int) = GL30.glDeleteRenderbuffers(renderbuffer)
+    override fun glRenderbufferStorage(target: Int, internalformat: Int, width: Int, height: Int) =
+        GL30.glRenderbufferStorage(target, internalformat, width, height)
+    override fun glFramebufferRenderbuffer(target: Int, attachment: Int, renderbuffertarget: Int, renderbuffer: Int) =
+        GL30.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer)
+
     override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray {
         val components = if (format == GL_RGBA) 4 else 3
         val buf = BufferUtils.createByteBuffer(width * height * components)

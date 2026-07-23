@@ -89,6 +89,9 @@ class ShaderProgram(
     fun setUniformMatrix(name: String, matrix: Matrix4, transpose: Boolean = false) =
         gl.glUniformMatrix4fv(getUniformLocation(name), transpose, matrix.`val`)
 
+    fun setUniformMatrix4fv(name: String, values: FloatArray, transpose: Boolean = false) =
+        gl.glUniformMatrix4fv(getUniformLocation(name), transpose, values)
+
     fun enableVertexAttribute(name: String) {
         val location = getAttributeLocation(name)
         if (location >= 0) gl.glEnableVertexAttribArray(location)

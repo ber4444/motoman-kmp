@@ -101,6 +101,33 @@ private class AndroidGl : Gl {
         GLES20.glDeleteTextures(1, scratch, 0)
     }
 
+    override fun glGenFramebuffer(): Int {
+        GLES20.glGenFramebuffers(1, scratch, 0)
+        return scratch[0]
+    }
+    override fun glBindFramebuffer(target: Int, framebuffer: Int) = GLES20.glBindFramebuffer(target, framebuffer)
+    override fun glDeleteFramebuffer(framebuffer: Int) {
+        scratch[0] = framebuffer
+        GLES20.glDeleteFramebuffers(1, scratch, 0)
+    }
+    override fun glFramebufferTexture2D(target: Int, attachment: Int, textarget: Int, texture: Int, level: Int) =
+        GLES20.glFramebufferTexture2D(target, attachment, textarget, texture, level)
+    override fun glCheckFramebufferStatus(target: Int): Int = GLES20.glCheckFramebufferStatus(target)
+    
+    override fun glGenRenderbuffer(): Int {
+        GLES20.glGenRenderbuffers(1, scratch, 0)
+        return scratch[0]
+    }
+    override fun glBindRenderbuffer(target: Int, renderbuffer: Int) = GLES20.glBindRenderbuffer(target, renderbuffer)
+    override fun glDeleteRenderbuffer(renderbuffer: Int) {
+        scratch[0] = renderbuffer
+        GLES20.glDeleteRenderbuffers(1, scratch, 0)
+    }
+    override fun glRenderbufferStorage(target: Int, internalformat: Int, width: Int, height: Int) =
+        GLES20.glRenderbufferStorage(target, internalformat, width, height)
+    override fun glFramebufferRenderbuffer(target: Int, attachment: Int, renderbuffertarget: Int, renderbuffer: Int) =
+        GLES20.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer)
+
     override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray {
         val components = if (format == GL_RGBA) 4 else 3
         val buf = ByteBuffer.allocateDirect(width * height * components).order(ByteOrder.nativeOrder())

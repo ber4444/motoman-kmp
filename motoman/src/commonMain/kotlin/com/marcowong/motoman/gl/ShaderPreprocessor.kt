@@ -60,7 +60,7 @@ class ShaderPreprocessor(private val target: GlslTarget) {
             .replace(INLINE_PRECISION, "")
 
     private companion object {
-        val DEFAULT_PRECISION = Regex("""precision\s+(lowp|mediump|highp)\s+\w+\s*;\s*""")
-        val INLINE_PRECISION = Regex("""\b(lowp|mediump|highp)\s+""")
+        val DEFAULT_PRECISION = Regex("""precision[ \t]+(lowp|mediump|highp)[ \t]+\w+[ \t]*;[ \t]*""")
+        val INLINE_PRECISION = Regex("""\b(lowp|mediump|highp)[ \t]+""")
     }
 }

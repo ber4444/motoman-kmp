@@ -25,16 +25,37 @@ enum class TextureWrap(val glEnum: Int) {
  */
 class Texture(
     private val gl: Gl,
-    pixmap: Pixmap,
+    @JvmField val width: Int,
+    @JvmField val height: Int,
+    pixels: ByteArray?,
+    glFormat: Int,
     minFilter: TextureFilter = TextureFilter.Linear,
     magFilter: TextureFilter = TextureFilter.Linear,
     uWrap: TextureWrap = TextureWrap.Repeat,
     vWrap: TextureWrap = TextureWrap.Repeat,
 ) {
-    @JvmField val width: Int = pixmap.width
-    @JvmField val height: Int = pixmap.height
+    constructor(
+        gl: Gl,
+        pixmap: Pixmap,
+        minFilter: TextureFilter = TextureFilter.Linear,
+        magFilter: TextureFilter = TextureFilter.Linear,
+        uWrap: TextureWrap = TextureWrap.Repeat,
+        vWrap: TextureWrap = TextureWrap.Repeat,
+    ) : this(gl, pixmap.width, pixmap.height, pixmap.pixels, pixmap.glFormat, minFilter, magFilter, uWrap, vWrap)
 
-    private var handle: Int = gl.glGenTexture()
+    constructor(
+        gl: Gl,
+        width: Int,
+        height: Int,
+        glFormat: Int = GL_RGBA,
+        minFilter: TextureFilter = TextureFilter.Linear,
+        magFilter: TextureFilter = TextureFilter.Linear,
+        uWrap: TextureWrap = TextureWrap.Repeat,
+        vWrap: TextureWrap = TextureWrap.Repeat,
+    ) : this(gl, width, height, null, glFormat, minFilter, magFilter, uWrap, vWrap)
+
+    var handle: Int = gl.glGenTexture()
+        private set
 
     var minFilter: TextureFilter = minFilter
         private set
@@ -48,12 +69,12 @@ class Texture(
     init {
         gl.glBindTexture(GL_TEXTURE_2D, handle)
         gl.glTexImage2D(
-            GL_TEXTURE_2D, 0, pixmap.glFormat,
-            pixmap.width, pixmap.height, 0,
-            pixmap.glFormat, GL_UNSIGNED_BYTE, pixmap.pixels,
+            GL_TEXTURE_2D, 0, glFormat,
+            width, height, 0,
+            glFormat, GL_UNSIGNED_BYTE, pixels,
         )
         // Mipmaps must exist before a mipmapping min filter is legal.
-        if (minFilter.isMipMap) gl.glGenerateMipmap(GL_TEXTURE_2D)
+        if (minFilter.isMipMap && pixels != null) gl.glGenerateMipmap(GL_TEXTURE_2D)
         applyFilters()
         applyWraps()
     }

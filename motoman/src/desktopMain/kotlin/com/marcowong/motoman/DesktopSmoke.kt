@@ -19,14 +19,25 @@ fun main(args: Array<String>) {
     val modelPath = opt("--model") ?: "data/bike.obj"
     val dumpPath = opt("--dump")
 
-    val app = ModelViewerApp(
-        assets = ClasspathAssets(),
-        modelPath = modelPath,
-        glslTarget = GlslTarget.DESKTOP_120,
-        // Sampling the framebuffer is only worth its cost on the scripted smoke run.
-        sampleFramebuffer = frames > 0,
-        batched = argv.contains("--batched"),
-    )
+    val isGame = argv.contains("--game")
+    
+    val app: GameApp = if (isGame) {
+        val generator = com.marcowong.motoman.track.TrackGenerator()
+        val trackData = generator.generate() ?: error("Failed to generate track data")
+        MotomanGameApp(
+            assets = ClasspathAssets(),
+            trackData = trackData,
+            glslTarget = GlslTarget.DESKTOP_120
+        )
+    } else {
+        ModelViewerApp(
+            assets = ClasspathAssets(),
+            modelPath = modelPath,
+            glslTarget = GlslTarget.DESKTOP_120,
+            sampleFramebuffer = frames > 0,
+            batched = argv.contains("--batched"),
+        )
+    }
 
     val host = DesktopHost(
         title = "Motoman — $modelPath",
@@ -38,10 +49,10 @@ fun main(args: Array<String>) {
     host.run(app)
 
     println("model:      $modelPath${if (argv.contains("--batched")) " (batched)" else ""}")
-    if (app.shaderLog.isNotBlank()) println("shader log: ${app.shaderLog.trim()}")
+    if (app is ModelViewerApp && app.shaderLog.isNotBlank()) println("shader log: ${app.shaderLog.trim()}")
     println("GL errors:  ${host.glErrorCount}")
 
-    if (frames > 0) {
+    if (frames > 0 && app is ModelViewerApp) {
         val pct = app.drawnPixelFraction * 100f
         println("drawn:      ${(pct * 100).toInt() / 100f}% of pixels")
         // A blank frame means the pipeline silently failed somewhere upstream.
@@ -50,7 +61,7 @@ fun main(args: Array<String>) {
         }
     }
     // Optional raw RGBA dump so a frame can be eyeballed rather than only measured.
-    if (dumpPath != null) {
+    if (dumpPath != null && app is ModelViewerApp) {
         app.lastFramePixels?.let { pixels ->
             java.io.DataOutputStream(java.io.File(dumpPath).outputStream().buffered()).use { out ->
                 out.writeInt(app.frameWidth)
