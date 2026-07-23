@@ -30,7 +30,11 @@ actual fun decodePixmap(bytes: ByteArray): Pixmap {
         val w = width.get(0)
         val h = height.get(0)
         val out = ByteArray(w * h * 4)
-        decoded.get(out)
+        // Copy via a duplicate: stbi_image_free frees memAddress(buffer), which is the
+        // address at the buffer's *current position*. Reading from `decoded` directly
+        // would leave position at the end and free base+size — a pointer stb never
+        // allocated. glibc aborts on that ("double free or corruption"); macOS does not.
+        decoded.duplicate().get(out)
         return Pixmap(w, h, PixmapFormat.RGBA8888, out)
     } finally {
         STBImage.stbi_image_free(decoded)
