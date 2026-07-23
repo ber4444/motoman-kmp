@@ -48,7 +48,13 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         glSurfaceView.setEGLContextClientVersion(2)
         glSurfaceView.setRenderer(object : GLSurfaceView.Renderer {
             override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
-                app.create(createPlatformGl(), 1, 1)
+                var platformGl: com.marcowong.motoman.gl.Gl = createPlatformGl()
+                val isDebug = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+                if (isDebug) {
+                    platformGl = com.marcowong.motoman.gl.GlDebug(platformGl)
+                }
+                platformGl = com.marcowong.motoman.gl.GlOptimized(platformGl)
+                app.create(platformGl, 1, 1)
                 lastTime = System.nanoTime()
             }
 

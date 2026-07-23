@@ -1,42 +1,29 @@
 package com.marcowong.motoman.audio
 
-import com.marcowong.motoman.audio.Audio
-import com.marcowong.motoman.audio.Haptics
-import com.marcowong.motoman.audio.Music
-import com.marcowong.motoman.audio.Sound
-import java.io.File
+import com.marcowong.motoman.assets.Assets
+import java.io.ByteArrayInputStream
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.Clip
 import javax.sound.sampled.FloatControl
 
-class DesktopAudio : Audio {
+class DesktopAudio(private val assets: Assets) : Audio {
     override fun newSound(path: String): Sound {
-        // Assume path is "data/engineSoundIdle.wav" etc
-        // Motoman Desktop runs from project root or motoman-android/assets?
-        // We look up from motoman-android/assets/
-        val file = File("../motoman-android/assets/$path")
-        val fallbackFile = File("motoman-android/assets/$path")
-        val actualFile = if (file.exists()) file else fallbackFile
-        
-        return DesktopSound(actualFile)
+        return DesktopSound(assets.readBytes(path))
     }
 
     override fun newMusic(path: String): Music {
-        val file = File("../motoman-android/assets/$path")
-        val fallbackFile = File("motoman-android/assets/$path")
-        val actualFile = if (file.exists()) file else fallbackFile
-        return DesktopMusic(actualFile)
+        return DesktopMusic(assets.readBytes(path))
     }
 }
 
-class DesktopSound(private val file: File) : Sound {
+class DesktopSound(private val audioData: ByteArray) : Sound {
     private var clip: Clip? = null
     private var baseSampleRate: Float = 44100f
 
     private fun loadClip() {
         if (clip != null) return
         try {
-            val audioIn = AudioSystem.getAudioInputStream(file)
+            val audioIn = AudioSystem.getAudioInputStream(ByteArrayInputStream(audioData))
             clip = AudioSystem.getClip()
             clip?.open(audioIn)
             baseSampleRate = clip?.format?.sampleRate ?: 44100f
@@ -112,13 +99,13 @@ class DesktopSound(private val file: File) : Sound {
     }
 }
 
-class DesktopMusic(private val file: File) : Music {
+class DesktopMusic(private val audioData: ByteArray) : Music {
     private var clip: Clip? = null
     
     private fun loadClip() {
         if (clip != null) return
         try {
-            val audioIn = AudioSystem.getAudioInputStream(file)
+            val audioIn = AudioSystem.getAudioInputStream(ByteArrayInputStream(audioData))
             clip = AudioSystem.getClip()
             clip?.open(audioIn)
         } catch (e: Exception) {
