@@ -62,11 +62,13 @@ kotlin {
                 implementation(libs.lwjgl.core)
                 implementation(libs.lwjgl.opengl)
                 implementation(libs.lwjgl.glfw)
+                implementation(libs.lwjgl.stb) // image decoding, no extra native dependency
 
                 val lwjglVersion = libs.versions.lwjgl.get()
                 runtimeOnly("org.lwjgl:lwjgl:$lwjglVersion:$lwjglNatives")
                 runtimeOnly("org.lwjgl:lwjgl-opengl:$lwjglVersion:$lwjglNatives")
                 runtimeOnly("org.lwjgl:lwjgl-glfw:$lwjglVersion:$lwjglNatives")
+                runtimeOnly("org.lwjgl:lwjgl-stb:$lwjglVersion:$lwjglNatives")
             }
         }
     }
