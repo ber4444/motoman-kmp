@@ -1,0 +1,131 @@
+name: PR checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A new push to the same PR cancels the previous run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build & test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Desktop must work on macOS and Linux both, so both are first-class here.
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # commonMain compiles today only because every current target is JVM. JVM-only APIs
+      # there would break the moment an iosMain/Kotlin-Native target is added, and the
+      # compiler will not flag them — so guard it explicitly.
+      - name: Check commonMain purity (no JVM-only APIs)
+        shell: bash
+        run: |
+          if grep -rnE '(^|[^A-Za-z0-9_.])(import java\.|Math\.|System\.)' \
+               motoman/src/commonMain motoman-track/src/commonMain; then
+            echo "::error::commonMain must not use java.*/Math./System. — use kotlin.math, copyInto, mutableMapOf"
+            exit 1
+          fi
+          echo "commonMain is clean"
+
+      # NOTE: this is currently a no-op — Kotlin SKIPs metadata compilation while every
+      # target is JVM-family. It is kept so the check starts doing real work the day an
+      # iosMain/Kotlin-Native target is added. The grep step above is the actual guard.
+      - name: Compile common metadata
+        run: ./gradlew compileCommonMainKotlinMetadata --stacktrace
+
+      - name: Unit tests
+        run: ./gradlew :motoman-track:desktopTest :motoman:desktopTest --stacktrace
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: '**/build/test-results/**/*.xml'
+          if-no-files-found: warn
+
+  android:
+    name: Compile Android targets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # ANDROID_HOME is preinstalled on GitHub's ubuntu runners, so no local.properties
+      # is needed (it is gitignored and holds a developer-specific SDK path).
+      - name: Compile Android variants
+        run: |
+          ./gradlew :motoman-track:compileDebugKotlinAndroid \
+                    :motoman:compileDebugKotlinAndroid --stacktrace
+
+  desktop-smoke:
+    name: Desktop GL smoke (Linux, software GL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # GLFW needs X11 client libs; Mesa's llvmpipe provides a software GL 2.1 context,
+      # which is all the engine asks for.
+      - name: Install X11 + Mesa runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb libgl1 libglx-mesa0 libgl1-mesa-dri libglu1-mesa \
+            libx11-6 libxrandr2 libxinerama1 libxcursor1 libxi6 libxxf86vm1
+
+      # Brings up a real GLFW window and GL context, runs three frames through
+      # GlOptimized(GlDebug(DesktopGl)) and fails if glGetError ever reports non-zero.
+      # This is the Linux half of the macOS run done during development.
+      - name: Run GL smoke test
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+        run: xvfb-run -a ./gradlew :motoman:runDesktop --args="--frames 3" --stacktrace
