@@ -1,6 +1,12 @@
 package com.marcowong.motoman
 
-import android.app.Activity
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.viewinterop.AndroidView
+import com.marcowong.motoman.ui.MotomanHUD
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -17,7 +23,7 @@ import com.marcowong.motoman.track.TrackGenerator
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class MainActivity : Activity(), SensorEventListener {
+class MainActivity : ComponentActivity(), SensorEventListener {
     private lateinit var glSurfaceView: GLSurfaceView
     private lateinit var sensorManager: SensorManager
     private var accelerometer: Sensor? = null
@@ -57,7 +63,13 @@ class MainActivity : Activity(), SensorEventListener {
             }
         })
         
-        setContentView(glSurfaceView)
+        setContent {
+            val state by app.gameStateFlow.state.collectAsState()
+            Box {
+                AndroidView(factory = { glSurfaceView })
+                MotomanHUD(state = state)
+            }
+        }
     }
 
     override fun onResume() {
