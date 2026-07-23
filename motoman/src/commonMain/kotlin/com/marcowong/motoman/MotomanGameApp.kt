@@ -192,7 +192,7 @@ class MotomanGameApp(
         track = SceneTrack(assets, textures, gl, trackData, decorationQuota)
         inputMeters = StubInputMeters(InputState())
         rider = Rider(assets, textures, batch, track.logic)
-        motorcycle = MainMotorcycle(assets, textures, batch, track.logic, inputMeters)
+        motorcycle = MainMotorcycle(gl, glslTarget, audio, haptics, assets, textures, batch, track.logic, inputMeters)
         motorcycle.rider = rider
         rider.motorcycle = motorcycle
         

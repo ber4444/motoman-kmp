@@ -14,23 +14,15 @@ import com.marcowong.motoman.track.logic.IMotorcycleInputMeters
 import com.marcowong.motoman.track.logic.Track as LogicTrack
 import kotlin.math.abs
 
-// Placeholder for Particle FX (to be implemented in PR 7)
-class MotorcycleFX {
-    fun init(camera: MotomanCamera) {}
-    fun update(delta: Float) {}
-    fun render() {}
-    fun dispose() {}
-}
-
-// Placeholder for Audio SFX (to be implemented in PR 6)
-class MotorcycleSFX {
-    fun update(delta: Float) {}
-    fun gamePause() {}
-    fun gameResume() {}
-    fun dispose() {}
-}
+import com.marcowong.motoman.audio.Audio
+import com.marcowong.motoman.audio.Haptics
+import com.marcowong.motoman.audio.MotorcycleSFX
 
 open class Motorcycle(
+    val gl: Gl,
+    val glslTarget: com.marcowong.motoman.gl.GlslTarget,
+    val audio: Audio,
+    val haptics: Haptics,
     assets: Assets,
     textures: TextureCache,
     batch: MeshOptimized,
@@ -39,8 +31,16 @@ open class Motorcycle(
 ) {
     val logic = LogicMotorcycle(logicTrack, inputMeters)
     
-    val fx = MotorcycleFX()
-    val sfx = MotorcycleSFX()
+    val fx = MotorcycleFX(gl, assets, textures, glslTarget)
+    
+    private var lastBackfireSize = 0f
+    private val backfireReporter = object : MotorcycleSFX.BackfireReporter {
+        override fun reportBackfire(size: Float) {
+            lastBackfireSize = size
+        }
+    }
+    
+    val sfx = MotorcycleSFX(this, backfireReporter, audio, haptics)
     
     var rider: Rider? = null
         set(value) {
@@ -134,11 +134,61 @@ open class Motorcycle(
         renderModel(shader, camera, shadowModelMeshContext, tmpMat)
     }
     
+    private val tmpMat5 = Matrix4()
+    private val tmpVec3 = Vector3()
+    private val backfireFXPosition = object : com.marcowong.motoman.scene.DynamicFXPosition {
+        override fun getPosition(vec: Vector3) {
+            vec.set(backfirePos)
+            vec.mul(logic.state.lean)
+            vec.mul(logic.state.pos)
+        }
+    }
+
+    private fun updateFX(delta: Float) {
+        val speedRatio = kotlin.math.min(1f, logic.state.bikeVelo.len2())
+        if (logic.state.frontTraction < 1f) {
+            tmpMat5.set(logic.state.pos)
+            tmpVec3.set(0f, 0f, 0f)
+            tmpVec3.mul(frontWheelPos)
+            tmpMat5.translate(tmpVec3.x, 0f, tmpVec3.z)
+            tmpMat5.getTranslation(tmpVec3)
+            fx.addSmoke(((1f - logic.state.frontTraction) * 4f + (kotlin.random.Random.nextFloat() - 0.5f)) * speedRatio,
+                    tmpVec3.x + 2f * (kotlin.random.Random.nextFloat() - 0.5f) * speedRatio,
+                    tmpVec3.y + kotlin.random.Random.nextFloat() * speedRatio,
+                    tmpVec3.z + 2f * (kotlin.random.Random.nextFloat() - 0.5f) * speedRatio)
+        }
+        if (logic.state.backTraction < 1f) {
+            tmpMat5.set(logic.state.pos)
+            tmpVec3.set(0f, 0f, 0f)
+            tmpVec3.mul(rearWheelPos)
+            tmpMat5.translate(tmpVec3.x, 0f, tmpVec3.z)
+            tmpMat5.getTranslation(tmpVec3)
+            fx.addSmoke(((1f - logic.state.backTraction) * 4f + (kotlin.random.Random.nextFloat() - 0.5f)) * speedRatio,
+                    tmpVec3.x + 2f * (kotlin.random.Random.nextFloat() - 0.5f) * speedRatio,
+                    tmpVec3.y + kotlin.random.Random.nextFloat() * speedRatio,
+                    tmpVec3.z + 2f * (kotlin.random.Random.nextFloat() - 0.5f) * speedRatio)
+        }
+        if (logic.state.isTouchingGround) {
+            tmpVec3.set(0f, logic.massCenterHeight, 0f)
+            tmpVec3.mul(logic.state.lean)
+            tmpVec3.y = 0f
+            tmpVec3.mul(logic.state.pos)
+            fx.addSpark((kotlin.random.Random.nextFloat() + 0.5f) * speedRatio,
+                    tmpVec3.x + 2f * (kotlin.random.Random.nextFloat() - 0.5f) * speedRatio,
+                    tmpVec3.y + kotlin.random.Random.nextFloat() * speedRatio,
+                    tmpVec3.z + 2f * (kotlin.random.Random.nextFloat() - 0.5f) * speedRatio)
+        }
+        if (lastBackfireSize > 0f) {
+            fx.addBackfire(2f * lastBackfireSize, backfireFXPosition)
+            lastBackfireSize = 0f
+        }
+        fx.update(delta)
+    }
+
     fun update(delta: Float) {
         logic.update(delta)
         if (logic.state === logic.statePersist) {
-            // fx and sfx will be updated here later
-            fx.update(delta)
+            updateFX(delta)
             sfx.update(delta)
         }
     }
@@ -154,12 +204,16 @@ open class Motorcycle(
 }
 
 class MainMotorcycle(
+    gl: Gl,
+    glslTarget: com.marcowong.motoman.gl.GlslTarget,
+    audio: Audio,
+    haptics: Haptics,
     assets: Assets,
     textures: TextureCache,
     batch: MeshOptimized,
     logicTrack: LogicTrack,
     inputMeters: IMotorcycleInputMeters
-) : Motorcycle(assets, textures, batch, logicTrack, inputMeters) {
+) : Motorcycle(gl, glslTarget, audio, haptics, assets, textures, batch, logicTrack, inputMeters) {
     init {
         val objLoader = ObjLoader(assets)
         val mainBodyModel = objLoader.loadObj("data/bikeBody.obj", true) ?: error("Failed to load bikeBody.obj")

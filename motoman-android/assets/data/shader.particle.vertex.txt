@@ -1,0 +1,12 @@
+attribute vec4 a_position;
+attribute vec3 a_normal;
+attribute vec2 a_texCoord0;
+varying vec2 v_texCoord0;
+varying float v_alpha;
+uniform mat4 modelviewproj;
+void main()
+{
+	v_texCoord0 = a_texCoord0;
+	v_alpha = a_normal.x;
+	gl_Position = modelviewproj * a_position;
+}
