@@ -39,8 +39,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         
+        val audio = AndroidAudio(this)
+        val haptics = AndroidHaptics(this)
         val trackData = TrackGenerator().generate() ?: error("Failed to generate track data")
-        val app = MotomanGameApp(AndroidAssets(assets), trackData, GlslTarget.ES_100)
+        val app = MotomanGameApp(AndroidAssets(assets), trackData, GlslTarget.ES_100, audio, haptics)
         
         glSurfaceView = GLSurfaceView(this)
         glSurfaceView.setEGLContextClientVersion(2)
