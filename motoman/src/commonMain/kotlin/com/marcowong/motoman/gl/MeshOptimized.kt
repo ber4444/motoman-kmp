@@ -176,7 +176,11 @@ class MeshOptimized(private val gl: Gl) {
             for (c in 0 until copies) {
                 baseVertices.copyInto(vertices, c * baseVertices.size)
                 for (v in 0 until vertexCount) {
-                    vertices[c * baseVertices.size + v * VERTEX_FLOATS + 8] += (c * maxSkeletonId).toFloat()
+                    val skeIdx = c * baseVertices.size + v * VERTEX_FLOATS + 8
+                    val skeId = vertices[skeIdx]
+                    if (skeId != 0f) {
+                        vertices[skeIdx] += (c * maxSkeletonId).toFloat()
+                    }
                 }
                 baseIndices.copyInto(indices, c * baseIndices.size)
                 for (i in baseIndices.indices) {
