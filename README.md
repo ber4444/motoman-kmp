@@ -47,10 +47,10 @@ Alternatively, open the project in Android Studio and run the `motoman-android` 
 
 ### Architecture
 
-The project is structured as a Kotlin Multiplatform (KMP) application with a core shared engine and platform-specific hosts.
+While structured as a standard Kotlin Multiplatform (KMP) project, this game features several unique architectural choices that set it apart:
 
-- **`motoman/src/commonMain`**: Contains the core game loop, physics engine, scene graph, track generation, and the abstracted `Gl` interface. This code is entirely platform-agnostic. 
-- **`motoman/src/desktopMain`**: Implements the desktop host using LWJGL and GLFW for windowing, rendering, and input.
-- **`motoman/src/androidMain`**: Contains Android-specific implementations such as `Gl` mapping directly to `android.opengl.GLES20` and asset loading.
-- **`motoman-android`**: The Android application module. It hosts the game inside a `GLSurfaceView` and natively overlays the HUD and UI using Jetpack Compose.
-- **Rendering Pipeline**: The engine loads `.obj` and `.mtl` assets natively and draws them using a custom OpenGL pipeline with GLSL shaders. We rely on OpenGL ES 2.0 (Android) and OpenGL 2.1 (Desktop), avoiding heavy game engine dependencies.
+- **Engine-less Design:** Instead of relying on a heavyweight game engine, the game is built entirely from scratch in Kotlin.
+- **Custom Abstracted `Gl` Interface:** The core rendering logic is entirely platform-agnostic. It runs against a custom `Gl` interface which directly maps to `android.opengl.GLES20` on Android and `LWJGL GL11/20` on Desktop, guaranteeing high-performance native OpenGL execution on both platforms.
+- **Native UI Overlay:** Instead of drawing the Heads-Up Display (HUD) and menus within the OpenGL context, the game relies on native UI toolkits. On Android, the HUD is built entirely in Jetpack Compose, effortlessly overlaying the `GLSurfaceView`.
+- **Custom Asset Pipeline:** Features a bespoke, lightweight `.obj` and `.mtl` parser written in pure Kotlin to load 3D assets and materials directly into the rendering pipeline.
+- **Native Shaders:** Advanced visual effects like Bloom, Motion Blur, and FXAA are implemented directly via custom GLSL shaders executing natively against the platform's graphics hardware.
