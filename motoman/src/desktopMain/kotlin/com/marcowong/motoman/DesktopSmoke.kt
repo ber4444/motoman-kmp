@@ -25,12 +25,19 @@ fun main(args: Array<String>) {
         glslTarget = GlslTarget.DESKTOP_120,
         // Sampling the framebuffer is only worth its cost on the scripted smoke run.
         sampleFramebuffer = frames > 0,
+        batched = argv.contains("--batched"),
     )
 
-    val host = DesktopHost(title = "Motoman — $modelPath", debugGl = true, maxFrames = frames)
+    val host = DesktopHost(
+        title = "Motoman — $modelPath",
+        debugGl = true,
+        maxFrames = frames,
+        // Scripted runs must be reproducible frame-for-frame.
+        fixedTimestep = if (frames > 0) 1f / 60f else null,
+    )
     host.run(app)
 
-    println("model:      $modelPath")
+    println("model:      $modelPath${if (argv.contains("--batched")) " (batched)" else ""}")
     if (app.shaderLog.isNotBlank()) println("shader log: ${app.shaderLog.trim()}")
     println("GL errors:  ${host.glErrorCount}")
 

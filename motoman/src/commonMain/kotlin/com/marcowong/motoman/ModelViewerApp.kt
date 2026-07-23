@@ -10,6 +10,8 @@ import com.marcowong.motoman.gl.GL_UNSIGNED_BYTE
 import com.marcowong.motoman.gl.Gl
 import com.marcowong.motoman.gl.GlslTarget
 import com.marcowong.motoman.gl.ShaderPreprocessor
+import com.marcowong.motoman.gl.IMeshContext
+import com.marcowong.motoman.gl.MeshOptimized
 import com.marcowong.motoman.gl.ShaderProgram
 import com.marcowong.motoman.model.ObjLoader
 import com.marcowong.motoman.model.RenderableModel
@@ -34,11 +36,15 @@ class ModelViewerApp(
     private val glslTarget: GlslTarget,
     /** When true, the framebuffer is sampled after each frame; see [drawnPixelFraction]. */
     private val sampleFramebuffer: Boolean = false,
+    /** Draw through the batched [MeshOptimized] path instead of one Mesh per sub-mesh. */
+    private val batched: Boolean = false,
 ) : GameApp {
 
     private lateinit var gl: Gl
     private lateinit var shader: ShaderProgram
-    private lateinit var renderable: RenderableModel
+    private var renderable: RenderableModel? = null
+    private var batch: MeshOptimized? = null
+    private var batchContext: IMeshContext? = null
     private lateinit var textures: TextureCache
     private lateinit var camera: PerspectiveCamera
 
@@ -83,7 +89,19 @@ class ModelViewerApp(
         val model = ObjLoader(assets).loadObj(modelPath)
             ?: error("failed to load model $modelPath")
         textures = TextureCache(gl, assets)
-        renderable = RenderableModel(gl, model, textures)
+        if (batched) {
+            // Textures still have to be attached to the materials the batch will bind.
+            for (sub in model.subMeshes) {
+                val material = sub.material ?: continue
+                material.diffuseTextureName?.let { material.diffuseTexture = textures.get(it) }
+            }
+            batch = MeshOptimized(gl).also {
+                batchContext = it.add(model)
+                it.optimize()
+            }
+        } else {
+            renderable = RenderableModel(gl, model, textures)
+        }
 
         camera = PerspectiveCamera(67f, width.toFloat(), height.toFloat())
         frameModel(model)
@@ -150,7 +168,8 @@ class ModelViewerApp(
         shader.setUniformMatrix("modelviewproj", modelViewProj)
         shader.setUniformi("isNoLightEffect", 0)
 
-        renderable.render(shader)
+        renderable?.render(shader)
+        batchContext?.render(shader)
 
         if (sampleFramebuffer) drawnPixelFraction = measureDrawnPixels()
     }
@@ -177,7 +196,8 @@ class ModelViewerApp(
     }
 
     override fun dispose() {
-        renderable.dispose()
+        renderable?.dispose()
+        batch?.dispose()
         textures.dispose()
         shader.dispose()
     }

@@ -27,6 +27,11 @@ class DesktopHost(
     private val debugGl: Boolean = false,
     /** Auto-exit after this many frames (0 = run until closed). Used for CI smoke runs. */
     private val maxFrames: Int = 0,
+    /**
+     * When set, every frame advances by exactly this many seconds instead of wall-clock
+     * time. Makes scripted runs reproducible frame-for-frame, which wall-clock dt is not.
+     */
+    private val fixedTimestep: Float? = null,
 ) {
     /** GL errors seen when [debugGl] is on; the verification plan asserts this is zero. */
     var glErrorCount: Int = 0
@@ -98,7 +103,8 @@ class DesktopHost(
 
             val now = GLFW.glfwGetTime()
             // Clamp dt so a breakpoint or a stalled frame cannot explode the physics step.
-            val dt = ((now - lastTime).toFloat()).coerceAtMost(MAX_FRAME_SECONDS)
+            val dt = fixedTimestep
+                ?: ((now - lastTime).toFloat()).coerceAtMost(MAX_FRAME_SECONDS)
             lastTime = now
 
             pollInput()

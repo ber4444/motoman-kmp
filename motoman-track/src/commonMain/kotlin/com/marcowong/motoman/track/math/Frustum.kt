@@ -30,6 +30,14 @@ open class Frustum {
             i++
             j += 3
         }
+        rebuildPlanes()
+    }
+
+    /**
+     * Fits the six planes to the current [planePoints]. Split out so subclasses that
+     * derive the corners differently — portal culling, for one — reuse the same winding.
+     */
+    protected fun rebuildPlanes() {
         planes[0].set(planePoints[1], planePoints[0], planePoints[2])
         planes[1].set(planePoints[4], planePoints[5], planePoints[7])
         planes[2].set(planePoints[0], planePoints[4], planePoints[3])
