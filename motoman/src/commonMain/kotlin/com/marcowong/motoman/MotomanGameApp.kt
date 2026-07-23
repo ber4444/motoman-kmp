@@ -44,6 +44,7 @@ class MotomanGameApp(
     private val trackData: TrackData,
     private val glslTarget: GlslTarget
 ) : GameApp {
+    val gameStateFlow = GameStateFlow()
     private lateinit var gl: Gl
     private lateinit var textures: TextureCache
     private lateinit var batch: MeshOptimized
@@ -273,6 +274,13 @@ class MotomanGameApp(
                 if (!isPersistUpdateStep) break
             }
             camera.update(true)
+            
+            // Extract UI info from logic state
+            val speed = motorcycle.logic.state.bikeVelo.len() * 3.6f // m/s to km/h
+            val gear = 1 // Simplified for now
+            // Placeholder for corner notification
+            val nextCorner: String? = null
+            gameStateFlow.update(speed, gear, nextCorner)
         }
     }
 
