@@ -25,10 +25,10 @@ jobs:
         # Desktop must work on macOS and Linux both, so both are first-class here.
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -63,7 +63,7 @@ jobs:
 
       - name: Upload test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: test-results-${{ matrix.os }}
           path: '**/build/test-results/**/*.xml'
@@ -73,10 +73,10 @@ jobs:
     name: Compile Android targets
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -98,10 +98,10 @@ jobs:
     name: Desktop GL smoke (Linux, software GL)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -112,8 +112,11 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # GLFW needs X11 client libs; Mesa's llvmpipe provides a software GL 2.1 context,
-      # which is all the engine asks for.
+      # GLFW needs X11 client libs; Mesa's llvmpipe provides a software GL context.
+      # Note the version differs from macOS: Mesa returns 4.5 compatibility / GLSL 4.50
+      # even though a 2.1 context is requested (legal — compat profiles are backward
+      # compatible), while Apple caps at 2.1 / GLSL 1.20. macOS is therefore the binding
+      # constraint, and why ShaderPreprocessor targets GLSL 120 on desktop.
       - name: Install X11 + Mesa runtime
         run: |
           sudo apt-get update
