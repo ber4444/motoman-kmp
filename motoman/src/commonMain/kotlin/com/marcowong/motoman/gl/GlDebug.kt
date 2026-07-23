@@ -97,6 +97,9 @@ class GlDebug(
     override fun glGenerateMipmap(target: Int) = op("glGenerateMipmap") { delegate.glGenerateMipmap(target) }
     override fun glDeleteTexture(texture: Int) = op("glDeleteTexture") { delegate.glDeleteTexture(texture) }
 
+    override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray =
+        op("glReadPixels") { delegate.glReadPixels(x, y, width, height, format, type) }
+
     // Not wrapped: querying error would recurse. Pass through.
     override fun glGetError(): Int = delegate.glGetError()
     override fun glGetString(name: Int): String? = delegate.glGetString(name)

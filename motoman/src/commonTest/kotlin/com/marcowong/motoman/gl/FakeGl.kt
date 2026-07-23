@@ -86,6 +86,11 @@ class FakeGl : Gl {
     override fun glGenerateMipmap(target: Int) { calls += "glGenerateMipmap($target)" }
     override fun glDeleteTexture(texture: Int) { calls += "glDeleteTexture($texture)" }
 
+    override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray {
+        calls += "glReadPixels($x,$y,$width,$height)"
+        return ByteArray(width * height * if (format == GL_RGBA) 4 else 3)
+    }
+
     override fun glGetError(): Int = GL_NO_ERROR
     override fun glGetString(name: Int): String = "fake"
 }

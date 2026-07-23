@@ -79,6 +79,12 @@ interface Gl {
     fun glGenerateMipmap(target: Int)
     fun glDeleteTexture(texture: Int)
 
+    /**
+     * Reads back a rectangle of the framebuffer as tightly packed bytes. Used to assert
+     * that a frame actually drew something rather than trusting that it did.
+     */
+    fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray
+
     // ---- Diagnostics ----
     fun glGetError(): Int
     fun glGetString(name: Int): String?

@@ -215,6 +215,8 @@ class GlOptimized(private val delegate: Gl) : Gl {
     override fun glTexImage2D(target: Int, level: Int, internalformat: Int, width: Int, height: Int, border: Int, format: Int, type: Int, pixels: ByteArray?) =
         delegate.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
     override fun glGenerateMipmap(target: Int) = delegate.glGenerateMipmap(target)
+    override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray =
+        delegate.glReadPixels(x, y, width, height, format, type)
     override fun glGetError(): Int = delegate.glGetError()
     override fun glGetString(name: Int): String? = delegate.glGetString(name)
 }
