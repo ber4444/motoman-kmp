@@ -51,12 +51,17 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
+        // Desktop reads game data off the classpath. Point it at the same directory the
+        // Android APK packages, so both platforms load byte-identical assets from one
+        // source of truth rather than a duplicated copy.
+        val desktopMainResources = file("../motoman-android/assets")
         val androidMain by getting {
             dependencies {
                 implementation(libs.kotlinx.coroutines.android)
             }
         }
         val desktopMain by getting {
+            resources.srcDir(desktopMainResources)
             dependencies {
                 implementation(libs.kotlinx.coroutines.swing)
                 implementation(libs.lwjgl.core)
