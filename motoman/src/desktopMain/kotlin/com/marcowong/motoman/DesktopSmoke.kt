@@ -1,56 +1,58 @@
 package com.marcowong.motoman
 
-import com.marcowong.motoman.gl.GL_COLOR_BUFFER_BIT
-import com.marcowong.motoman.gl.GL_DEPTH_BUFFER_BIT
-import com.marcowong.motoman.gl.GL_DEPTH_TEST
-import com.marcowong.motoman.gl.GL_RENDERER
-import com.marcowong.motoman.gl.GL_SHADING_LANGUAGE_VERSION
-import com.marcowong.motoman.gl.GL_VERSION
-import com.marcowong.motoman.gl.Gl
+import com.marcowong.motoman.assets.ClasspathAssets
+import com.marcowong.motoman.gl.GlslTarget
 
 /**
- * Minimal [GameApp] that brings up a context and clears the screen. It exists to prove the
- * host + `Gl` decorator chain work end-to-end on a real driver before any geometry lands.
- */
-class SmokeApp : GameApp {
-    private lateinit var gl: Gl
-
-    override fun create(gl: Gl, width: Int, height: Int) {
-        this.gl = gl
-        println("GL_VERSION  = ${gl.glGetString(GL_VERSION)}")
-        println("GL_RENDERER = ${gl.glGetString(GL_RENDERER)}")
-        println("GLSL        = ${gl.glGetString(GL_SHADING_LANGUAGE_VERSION)}")
-        gl.glEnable(GL_DEPTH_TEST)
-        gl.glClearColor(0.1f, 0.12f, 0.16f, 1f)
-    }
-
-    override fun resize(width: Int, height: Int) {
-        gl.glViewport(0, 0, width, height)
-    }
-
-    override fun update(dt: Float, input: InputState) = Unit
-
-    override fun render() {
-        gl.glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-    }
-
-    override fun dispose() = Unit
-}
-
-/**
- * Desktop entry point. Pass `--frames N` to auto-exit after N frames (CI smoke run);
- * omit it for an interactive window. Requires `-XstartOnFirstThread` on macOS.
+ * Desktop entry point.
+ *
+ *   --frames N   auto-exit after N frames (CI smoke run); omit for an interactive window
+ *   --model P    asset path of the OBJ to display (default: the bike)
+ *
+ * Requires `-XstartOnFirstThread` on macOS; `:motoman:runDesktop` adds it there.
  */
 fun main(args: Array<String>) {
-    val frames = args.toList().zipWithNext()
-        .firstOrNull { it.first == "--frames" }
-        ?.second?.toIntOrNull() ?: 0
+    val argv = args.toList()
+    fun opt(name: String): String? = argv.zipWithNext().firstOrNull { it.first == name }?.second
 
-    val host = DesktopHost(title = "Motoman (smoke)", debugGl = true, maxFrames = frames)
-    host.run(SmokeApp())
+    val frames = opt("--frames")?.toIntOrNull() ?: 0
+    val modelPath = opt("--model") ?: "data/bike.obj"
+    val dumpPath = opt("--dump")
 
-    println("GL errors: ${host.glErrorCount}")
-    if (host.glErrorCount != 0) {
-        error("smoke run reported ${host.glErrorCount} GL error(s)")
+    val app = ModelViewerApp(
+        assets = ClasspathAssets(),
+        modelPath = modelPath,
+        glslTarget = GlslTarget.DESKTOP_120,
+        // Sampling the framebuffer is only worth its cost on the scripted smoke run.
+        sampleFramebuffer = frames > 0,
+    )
+
+    val host = DesktopHost(title = "Motoman — $modelPath", debugGl = true, maxFrames = frames)
+    host.run(app)
+
+    println("model:      $modelPath")
+    if (app.shaderLog.isNotBlank()) println("shader log: ${app.shaderLog.trim()}")
+    println("GL errors:  ${host.glErrorCount}")
+
+    if (frames > 0) {
+        val pct = app.drawnPixelFraction * 100f
+        println("drawn:      ${(pct * 100).toInt() / 100f}% of pixels")
+        // A blank frame means the pipeline silently failed somewhere upstream.
+        check(app.drawnPixelFraction > 0.001f) {
+            "nothing was drawn — the frame is entirely clear colour"
+        }
     }
+    // Optional raw RGBA dump so a frame can be eyeballed rather than only measured.
+    if (dumpPath != null) {
+        app.lastFramePixels?.let { pixels ->
+            java.io.DataOutputStream(java.io.File(dumpPath).outputStream().buffered()).use { out ->
+                out.writeInt(app.frameWidth)
+                out.writeInt(app.frameHeight)
+                out.write(pixels)
+            }
+            println("dumped:     $dumpPath (${app.frameWidth}x${app.frameHeight} RGBA)")
+        }
+    }
+
+    check(host.glErrorCount == 0) { "run reported ${host.glErrorCount} GL error(s)" }
 }

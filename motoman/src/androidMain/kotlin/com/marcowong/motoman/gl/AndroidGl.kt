@@ -101,6 +101,16 @@ private class AndroidGl : Gl {
         GLES20.glDeleteTextures(1, scratch, 0)
     }
 
+    override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray {
+        val components = if (format == GL_RGBA) 4 else 3
+        val buf = ByteBuffer.allocateDirect(width * height * components).order(ByteOrder.nativeOrder())
+        GLES20.glReadPixels(x, y, width, height, format, type, buf)
+        val out = ByteArray(width * height * components)
+        buf.position(0)
+        buf.get(out)
+        return out
+    }
+
     override fun glGetError(): Int = GLES20.glGetError()
     override fun glGetString(name: Int): String? = GLES20.glGetString(name)
 }

@@ -92,6 +92,15 @@ private class DesktopGl : Gl {
     override fun glGenerateMipmap(target: Int) = GL30.glGenerateMipmap(target)
     override fun glDeleteTexture(texture: Int) = GL11.glDeleteTextures(texture)
 
+    override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray {
+        val components = if (format == GL_RGBA) 4 else 3
+        val buf = BufferUtils.createByteBuffer(width * height * components)
+        GL11.glReadPixels(x, y, width, height, format, type, buf)
+        val out = ByteArray(width * height * components)
+        buf.duplicate().get(out)
+        return out
+    }
+
     override fun glGetError(): Int = GL11.glGetError()
     override fun glGetString(name: Int): String? = GL11.glGetString(name)
 }
