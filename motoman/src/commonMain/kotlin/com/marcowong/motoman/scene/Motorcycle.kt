@@ -91,7 +91,7 @@ open class Motorcycle(
     }
     
     private fun copyMat(src: Matrix4, dst: Matrix4) {
-        System.arraycopy(src.`val`, 0, dst.`val`, 0, 16)
+        src.`val`.copyInto(dst.`val`, 0, 0, 16)
     }
     
     private val tmpVec4 = Vector3()

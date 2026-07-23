@@ -99,7 +99,7 @@ class Rider(
     }
 
     private fun copyMat(src: Matrix4, dst: Matrix4) {
-        System.arraycopy(src.`val`, 0, dst.`val`, 0, 16)
+        src.`val`.copyInto(dst.`val`, 0, 0, 16)
     }
 
     private val tmpMatP1 = Matrix4()
@@ -119,7 +119,7 @@ class Rider(
     private val tmpMat2 = Matrix4()
 
     private fun putMatToBuf(index: Int, mat: Matrix4) {
-        System.arraycopy(mat.`val`, 0, modelSkeMatsFBuf, index * 16, 16)
+        mat.`val`.copyInto(modelSkeMatsFBuf, index * 16, 0, 16)
     }
 
     fun render(shader: ShaderProgram, camera: MotomanCamera) {

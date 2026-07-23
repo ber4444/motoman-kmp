@@ -193,7 +193,7 @@ class MotomanGameApp(
         motorcycle.fx.init(camera)
         
         val m = track.logic.getStartSpawnPosition()
-        System.arraycopy(m.`val`, 0, motorcycle.logic.state.pos.`val`, 0, 16)
+        m.`val`.copyInto(motorcycle.logic.state.pos.`val`, 0, 0, 16)
         motorcycle.rider!!.strength = 1f
         
         batch.optimize()
@@ -319,7 +319,7 @@ class MotomanGameApp(
             if (!useLinearFilter) mainFBSpare.texture.setFilter(TextureFilter.Linear, TextureFilter.Linear)
             if (lastCameraViewReset) {
                 lastCameraViewReset = false
-                System.arraycopy(camera.combined.`val`, 0, lastCameraView.`val`, 0, 16)
+                camera.combined.`val`.copyInto(lastCameraView.`val`, 0, 0, 16)
             }
             ppMotionBlurShader.bind()
             mainFBSpare.texture.bind(1)
@@ -330,7 +330,7 @@ class MotomanGameApp(
             ppMotionBlurShader.setUniformMatrix("lastviewproj", lastCameraView, false)
             track.render(ppMotionBlurShader, camera)
             gl.glUseProgram(0)
-            System.arraycopy(camera.combined.`val`, 0, lastCameraView.`val`, 0, 16)
+            camera.combined.`val`.copyInto(lastCameraView.`val`, 0, 0, 16)
             if (!useLinearFilter) mainFBSpare.texture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest)
             gl.glDepthFunc(GL_LESS)
             standardShader.bind()
