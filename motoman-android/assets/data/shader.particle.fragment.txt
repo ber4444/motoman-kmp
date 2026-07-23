@@ -1,0 +1,13 @@
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+varying vec2 v_texCoord0;
+varying float v_alpha;
+uniform sampler2D diffuseTexture;
+
+void main()
+{
+	vec4 texColor = texture2D(diffuseTexture, v_texCoord0);
+	gl_FragColor = texColor * vec4(1.0, 1.0, 1.0, v_alpha);
+}
