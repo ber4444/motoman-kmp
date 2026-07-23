@@ -3,7 +3,7 @@ package com.marcowong.motoman.scene
 import com.marcowong.motoman.track.TrackDirection
 import com.marcowong.motoman.track.TrackSegment
 import com.marcowong.motoman.track.logic.ITrackee
-import com.marcowong.motoman.track.logic.Motorcycle
+import com.marcowong.motoman.scene.Motorcycle
 import com.marcowong.motoman.track.math.Matrix4
 import com.marcowong.motoman.track.math.PerspectiveCamera
 import com.marcowong.motoman.track.math.Quaternion
@@ -88,7 +88,7 @@ class MotomanCamera(
     private val shakeRotFactor = 5f
 
     fun followMotorcycle(delta: Float) {
-        if (!motorcycle.state.isCrashed) {
+        if (!motorcycle.logic.state.isCrashed) {
             val shakeVectorChangeRate = 0.2f
             state.shake.x = (1 - shakeVectorChangeRate) * state.shake.x + shakeVectorChangeRate * (Random.nextFloat() - 0.5f)
             state.shake.y = (1 - shakeVectorChangeRate) * state.shake.y + shakeVectorChangeRate * (Random.nextFloat() - 0.5f)
@@ -97,8 +97,8 @@ class MotomanCamera(
             state.shakeRot = (1 - shakeVectorChangeRate) * state.shakeRot + shakeVectorChangeRate * (Random.nextFloat() - 0.5f)
 
             var s = 0f
-            val engineOutput = motorcycle.getEngineOutputPercentage()
-            if (motorcycle.state.isStandBy) s = 0.05f
+            val engineOutput = motorcycle.logic.getEngineOutputPercentage()
+            if (motorcycle.logic.state.isStandBy) s = 0.05f
             else if (engineOutput > state.motorcycleEngineOutput) s = 1 - engineOutput
             else if (engineOutput < state.motorcycleEngineOutput) s = engineOutput
 
@@ -115,7 +115,7 @@ class MotomanCamera(
 
             if (state.vanishingPointNeedReset) {
                 state.vanishingPointNeedReset = false
-                state.vanishingPoint.set(0f, 0f, 10f).mul(motorcycle.state.pos)
+                state.vanishingPoint.set(0f, 0f, 10f).mul(motorcycle.logic.state.pos)
                 state.vanishingPoint.y = 0f
                 state.vanishingPointSmoothed.set(state.vanishingPoint)
             } else {
@@ -123,7 +123,7 @@ class MotomanCamera(
                 tmpVec.y = 0f
                 val stepFullLen = tmpVec.len()
                 if (stepFullLen > 0) {
-                    val step1 = motorcycle.state.bikeVelo.len() * 2
+                    val step1 = motorcycle.logic.state.bikeVelo.len() * 2
                     val step2 = delta * tmpVec2.set(state.vanishingPoint).sub(state.vanishingPointSmoothed).len()
                     val step = max(step1, step2)
                     if (step < stepFullLen) {
@@ -138,24 +138,24 @@ class MotomanCamera(
             }
 
             val motorcycleCounterSteeringShiftDecayFactor = 1.5f
-            state.motorcycleCounterSteeringShift += motorcycle.state.latestCounterSteeringPositionShift
+            state.motorcycleCounterSteeringShift += motorcycle.logic.state.latestCounterSteeringPositionShift
             state.motorcycleCounterSteeringShift -= state.motorcycleCounterSteeringShift * motorcycleCounterSteeringShiftDecayFactor * delta
 
             val vanishingPointLookingChangeRate = 0.01f
             state.vanishingPointLookingFactor = (1 - vanishingPointLookingChangeRate) * state.vanishingPointLookingFactor + vanishingPointLookingChangeRate * state.vanishingPointLookingFactorTarget
 
-            motorcycle.state.pos.getTranslation(tmpVec)
+            motorcycle.logic.state.pos.getTranslation(tmpVec)
             tmpVec.y = 0f
             tmpVec2.set(0f, 1f, 0f)
             tmpVec6.set(state.vanishingPointSmoothed).sub(tmpVec).mul(-1f).add(tmpVec)
             tmpMat2.setToLookAt(tmpVec, tmpVec6, tmpVec2).inv()
             tmpMat2.getRotation(tmpQua2)
-            motorcycle.state.pos.getRotation(tmpQua)
+            motorcycle.logic.state.pos.getRotation(tmpQua)
             tmpQua.slerp(tmpQua2, state.vanishingPointLookingFactor).nor()
-            tmpVec.set(state.motorcycleCounterSteeringShift, 5f, 0f).mul(motorcycle.state.pos)
+            tmpVec.set(state.motorcycleCounterSteeringShift, 5f, 0f).mul(motorcycle.logic.state.pos)
             tmpMat2.idt().set(tmpQua).trn(tmpVec)
             tmpVec.set(0f, 0f, -(12f + state.distance)).add(tmpVec5).mul(tmpMat2)
-            tmpVec2.set(state.motorcycleCounterSteeringShift, 5f, 0f).mul(motorcycle.state.pos)
+            tmpVec2.set(state.motorcycleCounterSteeringShift, 5f, 0f).mul(motorcycle.logic.state.pos)
 
             position.set(tmpVec)
             tmpMat2.idt().rotate(0f, 0f, 1f, state.shakeRot * state.shakeness * shakeRotFactor)
@@ -165,11 +165,11 @@ class MotomanCamera(
             state.motorcycleEngineOutput = engineOutput
         } else {
             val tv = Vector3()
-            motorcycle.getTrackeePos(tv)
+            motorcycle.logic.getTrackeePos(tv)
             tmpVec.set(tv)
             
             val tv2 = Vector3()
-            motorcycle.rider?.getTrackeePos(tv2) ?: tv2.set(tv)
+            motorcycle.rider?.logic?.getTrackeePos(tv2) ?: tv2.set(tv)
             tmpVec2.set(tv2)
 
             tmpVec.add(tmpVec2).mul(0.5f)
@@ -194,7 +194,7 @@ class MotomanCamera(
         tmpVec3.set(0f, 0f, 0f)
         tmpVec4.set(0f, 1f, 0f)
         tmpMat.setToLookAt(tmpVec3, direction, tmpVec4).inv()
-        val crashShake = if (motorcycle.state.isCrashed) 0f else state.shakeRot * state.shakeness * shakeRotFactor
+        val crashShake = if (motorcycle.logic.state.isCrashed) 0f else state.shakeRot * state.shakeness * shakeRotFactor
         tmpMat.rotate(0f, 0f, 1f, -deviceRot + crashShake)
         up.set(0f, 1f, 0f).mul(tmpMat)
     }
