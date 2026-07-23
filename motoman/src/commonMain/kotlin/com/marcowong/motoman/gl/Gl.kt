@@ -79,6 +79,18 @@ interface Gl {
     fun glGenerateMipmap(target: Int)
     fun glDeleteTexture(texture: Int)
 
+    // ---- Framebuffers & Renderbuffers ----
+    fun glGenFramebuffer(): Int
+    fun glBindFramebuffer(target: Int, framebuffer: Int)
+    fun glDeleteFramebuffer(framebuffer: Int)
+    fun glFramebufferTexture2D(target: Int, attachment: Int, textarget: Int, texture: Int, level: Int)
+    fun glCheckFramebufferStatus(target: Int): Int
+    fun glGenRenderbuffer(): Int
+    fun glBindRenderbuffer(target: Int, renderbuffer: Int)
+    fun glDeleteRenderbuffer(renderbuffer: Int)
+    fun glRenderbufferStorage(target: Int, internalformat: Int, width: Int, height: Int)
+    fun glFramebufferRenderbuffer(target: Int, attachment: Int, renderbuffertarget: Int, renderbuffer: Int)
+
     /**
      * Reads back a rectangle of the framebuffer as tightly packed bytes. Used to assert
      * that a frame actually drew something rather than trusting that it did.

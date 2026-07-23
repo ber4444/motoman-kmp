@@ -215,6 +215,18 @@ class GlOptimized(private val delegate: Gl) : Gl {
     override fun glTexImage2D(target: Int, level: Int, internalformat: Int, width: Int, height: Int, border: Int, format: Int, type: Int, pixels: ByteArray?) =
         delegate.glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels)
     override fun glGenerateMipmap(target: Int) = delegate.glGenerateMipmap(target)
+    
+    override fun glGenFramebuffer(): Int = delegate.glGenFramebuffer()
+    override fun glBindFramebuffer(target: Int, framebuffer: Int) = delegate.glBindFramebuffer(target, framebuffer)
+    override fun glDeleteFramebuffer(framebuffer: Int) = delegate.glDeleteFramebuffer(framebuffer)
+    override fun glFramebufferTexture2D(target: Int, attachment: Int, textarget: Int, texture: Int, level: Int) = delegate.glFramebufferTexture2D(target, attachment, textarget, texture, level)
+    override fun glCheckFramebufferStatus(target: Int): Int = delegate.glCheckFramebufferStatus(target)
+    override fun glGenRenderbuffer(): Int = delegate.glGenRenderbuffer()
+    override fun glBindRenderbuffer(target: Int, renderbuffer: Int) = delegate.glBindRenderbuffer(target, renderbuffer)
+    override fun glDeleteRenderbuffer(renderbuffer: Int) = delegate.glDeleteRenderbuffer(renderbuffer)
+    override fun glRenderbufferStorage(target: Int, internalformat: Int, width: Int, height: Int) = delegate.glRenderbufferStorage(target, internalformat, width, height)
+    override fun glFramebufferRenderbuffer(target: Int, attachment: Int, renderbuffertarget: Int, renderbuffer: Int) = delegate.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer)
+
     override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray =
         delegate.glReadPixels(x, y, width, height, format, type)
     override fun glGetError(): Int = delegate.glGetError()

@@ -97,6 +97,20 @@ class GlDebug(
     override fun glGenerateMipmap(target: Int) = op("glGenerateMipmap") { delegate.glGenerateMipmap(target) }
     override fun glDeleteTexture(texture: Int) = op("glDeleteTexture") { delegate.glDeleteTexture(texture) }
 
+    override fun glGenFramebuffer(): Int = op("glGenFramebuffer") { delegate.glGenFramebuffer() }
+    override fun glBindFramebuffer(target: Int, framebuffer: Int) = op("glBindFramebuffer") { delegate.glBindFramebuffer(target, framebuffer) }
+    override fun glDeleteFramebuffer(framebuffer: Int) = op("glDeleteFramebuffer") { delegate.glDeleteFramebuffer(framebuffer) }
+    override fun glFramebufferTexture2D(target: Int, attachment: Int, textarget: Int, texture: Int, level: Int) =
+        op("glFramebufferTexture2D") { delegate.glFramebufferTexture2D(target, attachment, textarget, texture, level) }
+    override fun glCheckFramebufferStatus(target: Int): Int = op("glCheckFramebufferStatus") { delegate.glCheckFramebufferStatus(target) }
+    override fun glGenRenderbuffer(): Int = op("glGenRenderbuffer") { delegate.glGenRenderbuffer() }
+    override fun glBindRenderbuffer(target: Int, renderbuffer: Int) = op("glBindRenderbuffer") { delegate.glBindRenderbuffer(target, renderbuffer) }
+    override fun glDeleteRenderbuffer(renderbuffer: Int) = op("glDeleteRenderbuffer") { delegate.glDeleteRenderbuffer(renderbuffer) }
+    override fun glRenderbufferStorage(target: Int, internalformat: Int, width: Int, height: Int) =
+        op("glRenderbufferStorage") { delegate.glRenderbufferStorage(target, internalformat, width, height) }
+    override fun glFramebufferRenderbuffer(target: Int, attachment: Int, renderbuffertarget: Int, renderbuffer: Int) =
+        op("glFramebufferRenderbuffer") { delegate.glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer) }
+
     override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray =
         op("glReadPixels") { delegate.glReadPixels(x, y, width, height, format, type) }
 
