@@ -2,7 +2,9 @@
 
 This is a Kotlin Multiplatform motorcycle racing game, ported from https://github.com/mammalwong/motoman.
 
-The game relies on a custom `Gl` interface mapping directly to raw Android GLES 2.0 and Desktop LWJGL/GLFW, without using any pre-existing game engine or heavy frameworks like LibGDX. The HUD and UI layers are rendered natively using Jetpack Compose.
+The game relies on a custom `Gl` interface mapping directly to raw Android GLES 2.0 and Desktop LWJGL/GLFW, without using any game engine or heavy frameworks. 
+
+The HUD and UI layers are rendered natively using Jetpack Compose.
 
 Blender was used to create, model, and export all the 3D environmental and character assets (such as the motorcycle, rider, buildings, and skybox) as .obj and .mtl files for rendering within the game.
 
