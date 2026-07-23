@@ -24,11 +24,12 @@ fun main(args: Array<String>) {
     val app: GameApp = if (isGame) {
         val generator = com.marcowong.motoman.track.TrackGenerator()
         val trackData = generator.generate() ?: error("Failed to generate track data")
+        val assets = ClasspathAssets()
         MotomanGameApp(
-            assets = ClasspathAssets(),
+            assets = assets,
             trackData = trackData,
             glslTarget = GlslTarget.DESKTOP_120,
-            audio = com.marcowong.motoman.audio.DesktopAudio(),
+            audio = com.marcowong.motoman.audio.DesktopAudio(assets),
             haptics = com.marcowong.motoman.audio.DesktopHaptics()
         )
     } else {
