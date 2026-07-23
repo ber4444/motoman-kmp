@@ -49,7 +49,7 @@ abstract class Camera {
 }
 
 /** Perspective camera, port of libGDX `PerspectiveCamera`. */
-class PerspectiveCamera : Camera {
+open class PerspectiveCamera : Camera {
     @JvmField var fieldOfView: Float = 67f
 
     private val tmp = Vector3()

@@ -57,6 +57,14 @@ class Quaternion(@JvmField var x: Float = 0f, @JvmField var y: Float = 0f, @JvmF
         
         return this
     }
+    fun nor(): Quaternion {
+        val len = x * x + y * y + z * z + w * w
+        if (len != 0f && len != 1f) {
+            val sq = sqrt(len)
+            x /= sq; y /= sq; z /= sq; w /= sq
+        }
+        return this
+    }
     
     fun toMatrix(matrix: FloatArray) {
         val xx = x * x
