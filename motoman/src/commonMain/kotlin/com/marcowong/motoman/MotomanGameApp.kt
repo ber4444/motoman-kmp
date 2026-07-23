@@ -30,6 +30,11 @@ import com.marcowong.motoman.gl.GL_FLOAT
 import com.marcowong.motoman.gl.TextureFilter
 import com.marcowong.motoman.gl.TextureWrap
 
+import com.marcowong.motoman.audio.Audio
+import com.marcowong.motoman.audio.Haptics
+import com.marcowong.motoman.audio.MotomanBGMusic
+import com.marcowong.motoman.audio.MotorcycleSFX
+
 import com.marcowong.motoman.track.logic.Motorcycle as LogicMotorcycle
 
 class StubInputMeters(private val input: InputState) : IMotorcycleInputMeters {
@@ -42,7 +47,9 @@ class StubInputMeters(private val input: InputState) : IMotorcycleInputMeters {
 class MotomanGameApp(
     private val assets: Assets,
     private val trackData: TrackData,
-    private val glslTarget: GlslTarget
+    private val glslTarget: GlslTarget,
+    private val audio: Audio,
+    private val haptics: Haptics
 ) : GameApp {
     val gameStateFlow = GameStateFlow()
     private lateinit var gl: Gl
@@ -81,6 +88,9 @@ class MotomanGameApp(
     private lateinit var camera: MotomanCamera
     private lateinit var inputMeters: StubInputMeters
     private var inputState: InputState? = null
+    
+    private lateinit var sfx: MotorcycleSFX
+    private lateinit var bgm: MotomanBGMusic
     
     private var gameUpdating = true
     private var deltaBudget = 0f
@@ -197,6 +207,15 @@ class MotomanGameApp(
         m.`val`.copyInto(motorcycle.logic.state.pos.`val`, 0, 0, 16)
         motorcycle.rider!!.strength = 1f
         
+        sfx = MotorcycleSFX(motorcycle, object : MotorcycleSFX.BackfireReporter {
+            override fun reportBackfire(size: Float) {
+                // Handle backfire visuals if needed
+            }
+        }, audio, haptics)
+        
+        bgm = MotomanBGMusic(audio)
+        bgm.play()
+        
         batch.optimize()
         
         resize(width, height)
@@ -264,6 +283,8 @@ class MotomanGameApp(
                 if (isPersistUpdateStep) {
                     // runGameRules(delta) // omitted crashes/respawn for basic loop
                 }
+                
+                sfx.update(delta)
                 
                 camera.setVanishingPointLookingFactor(0f)
                 camera.followMotorcycle(delta)
@@ -452,5 +473,7 @@ class MotomanGameApp(
         mainFrameBufferB?.dispose()
         bloomFrameBufferA?.dispose()
         bloomFrameBufferB?.dispose()
+        sfx.dispose()
+        bgm.dispose()
     }
 }

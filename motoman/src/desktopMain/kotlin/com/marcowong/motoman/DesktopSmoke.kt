@@ -27,7 +27,9 @@ fun main(args: Array<String>) {
         MotomanGameApp(
             assets = ClasspathAssets(),
             trackData = trackData,
-            glslTarget = GlslTarget.DESKTOP_120
+            glslTarget = GlslTarget.DESKTOP_120,
+            audio = com.marcowong.motoman.audio.DesktopAudio(),
+            haptics = com.marcowong.motoman.audio.DesktopHaptics()
         )
     } else {
         ModelViewerApp(
