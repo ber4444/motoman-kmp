@@ -8,6 +8,9 @@ import com.marcowong.motoman.gl.GlslTarget
  *
  *   --frames N   auto-exit after N frames (CI smoke run); omit for an interactive window
  *   --model P    asset path of the OBJ to display (default: the bike)
+ *   --game       run the full game instead of the single-model viewer
+ *   --capture P  write the final frame to P as a PNG (needs --frames)
+ *   --drive T    hold throttle at T (0..1) so a scripted capture is taken in motion
  *
  * Requires `-XstartOnFirstThread` on macOS; `:motoman:runDesktop` adds it there.
  */
@@ -30,7 +33,16 @@ fun main(args: Array<String>) {
             trackData = trackData,
             glslTarget = GlslTarget.DESKTOP_120,
             audio = com.marcowong.motoman.audio.DesktopAudio(assets),
-            haptics = com.marcowong.motoman.audio.DesktopHaptics()
+            haptics = com.marcowong.motoman.audio.DesktopHaptics(),
+            config = RenderConfig(
+                resolutionReduction = opt("--res")?.toFloatOrNull() ?: 0.5f,
+                modelTextureLinearFilter = argv.contains("--tex-linear"),
+                frameBufferLinearFilter = argv.contains("--fb-linear"),
+                bloom = !argv.contains("--no-bloom"),
+                motionBlur = !argv.contains("--no-mb"),
+                antiAliasing = !argv.contains("--no-aa"),
+            ),
+            debugPositions = argv.contains("--debug-pos"),
         )
     } else {
         ModelViewerApp(
@@ -42,12 +54,33 @@ fun main(args: Array<String>) {
         )
     }
 
+    // --turn-test drives a reproducible steering maneuver: settle, then hold a right turn,
+    // then reverse to a left turn. It proves the bike both turns the expected way and can be
+    // brought back the other way (the "gets stuck one direction" bug).
+    val turnTest = argv.contains("--turn-test")
+    val constSteer = opt("--steer")?.toFloatOrNull()
+    val steerScript: ((Int) -> Float)? = when {
+        turnTest -> { frame ->
+            when {
+                frame < 180 -> 0f      // settle: standby releases at ~120, then accelerate
+                frame < 390 -> 0.5f    // steer right (+1 = right)
+                else -> -0.5f          // reverse: steer left, should recover and turn back
+            }
+        }
+        constSteer != null -> { frame -> if (frame < 180) 0f else constSteer } // settle, then hold
+        else -> null
+    }
+
     val host = DesktopHost(
-        title = "Motoman — $modelPath",
+        title = if (isGame) "Motoman" else "Motoman — $modelPath",
         debugGl = true,
         maxFrames = frames,
         // Scripted runs must be reproducible frame-for-frame.
         fixedTimestep = if (frames > 0) 1f / 60f else null,
+        capturePath = opt("--capture"),
+        scriptedThrottle = if (turnTest || constSteer != null) 0.5f else opt("--drive")?.toFloatOrNull() ?: 0f,
+        scriptedSteer = steerScript,
+        captureEveryFrames = opt("--capture-every")?.toIntOrNull() ?: 0,
     )
     host.run(app)
 

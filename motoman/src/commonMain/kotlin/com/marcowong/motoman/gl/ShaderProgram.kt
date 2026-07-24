@@ -74,8 +74,26 @@ class ShaderProgram(
         gl.glUseProgram(program)
     }
 
+    /**
+     * Uniform location, cached. A name that does not resolve is reported once: GLSL compilers
+     * drop uniforms they consider unused, and drivers differ on whether an array can be looked
+     * up as `name` or only as `name[0]`, so a silent -1 is a common cause of geometry that
+     * renders on one platform and vanishes on another.
+     */
     fun getUniformLocation(name: String): Int =
-        uniformLocations.getOrPut(name) { gl.glGetUniformLocation(program, name) }
+        uniformLocations.getOrPut(name) {
+            val location = gl.glGetUniformLocation(program, name)
+            if (location < 0) {
+                // GLES drivers commonly require the "[0]" form for array uniforms.
+                val indexed = gl.glGetUniformLocation(program, "$name[0]")
+                if (indexed >= 0) {
+                    println("SHADER WARN: uniform '$name' resolved only as '$name[0]'")
+                    return@getOrPut indexed
+                }
+                println("SHADER WARN: uniform '$name' not found in program")
+            }
+            location
+        }
 
     fun getAttributeLocation(name: String): Int =
         attributeLocations.getOrPut(name) { gl.glGetAttribLocation(program, name) }

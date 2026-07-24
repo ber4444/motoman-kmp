@@ -11,7 +11,6 @@ import com.marcowong.motoman.gl.GL_SRC_ALPHA
 import com.marcowong.motoman.gl.GL_ONE_MINUS_SRC_ALPHA
 import com.marcowong.motoman.gl.GL_DEPTH_BUFFER_BIT
 import com.marcowong.motoman.gl.GL_COLOR_BUFFER_BIT
-import com.marcowong.motoman.gl.GL_TEXTURE_2D
 import com.marcowong.motoman.gl.GL_CULL_FACE
 import com.marcowong.motoman.scene.*
 import com.marcowong.motoman.track.TrackData
@@ -37,11 +36,52 @@ import com.marcowong.motoman.audio.MotorcycleSFX
 
 import com.marcowong.motoman.track.logic.Motorcycle as LogicMotorcycle
 
-class StubInputMeters(private val input: InputState) : IMotorcycleInputMeters {
+/**
+ * Adapts the host's [InputState] to the physics' meter interface, using the original game's
+ * "combined" one-stick steering model (`MotorcycleInputMetersEasy`).
+ *
+ * A single [InputState.steer] value drives the bike. The physics has two separate steering
+ * meters — counter-steering (initiates and reverses a lean) and leaning (deepens a turn) — and
+ * the trick is that the input acts as **either one or the other**, never both at once:
+ *
+ *  - steering *against* the current lean, or while nearly upright, is counter-steering;
+ *  - steering *into* an established lean is leaning.
+ *
+ * The previous stub applied both simultaneously (and negated counter-steering), so they fought
+ * each other: once leaned, the bike could not be brought back and got stuck turning one way.
+ *
+ * [input] is a `var` on purpose: the motorcycle keeps this adapter for its whole life, so the
+ * live [InputState] is swapped in here rather than replacing the adapter.
+ */
+class StubInputMeters(var input: InputState) : IMotorcycleInputMeters {
+    private var motorcycle: LogicMotorcycle? = null
+
     override fun getEngineAndBrakeMeter(): Float = input.throttle - input.brake
-    override fun getCounterSteeringMeter(): Float = -input.steer
-    override fun getLeanMeter(): Float = input.steer
-    override fun setMotorcycle(motorcycle: LogicMotorcycle) {}
+
+    /** Matches the original when |lean| is below this fraction of the safe angle, steer counter-steers. */
+    private val useMoreCounterSteeringRatio = 0.75f
+
+    private fun shouldCounterSteer(meter: Float): Boolean {
+        val moto = motorcycle ?: return true
+        val leanAngle = moto.state.leanAngle
+        // Steering opposite the current lean is always a counter-steer (recover / reverse).
+        if (meter < 0f && leanAngle > 0f) return true
+        if (meter > 0f && leanAngle < 0f) return true
+        // Near upright, steering counter-steers to tip the bike into a new lean.
+        if (kotlin.math.abs(leanAngle) <= moto.leanAngleSafe * useMoreCounterSteeringRatio) return true
+        // Already leaned and steering into it: lean instead.
+        return false
+    }
+
+    override fun getCounterSteeringMeter(): Float =
+        if (shouldCounterSteer(input.steer)) input.steer else 0f
+
+    override fun getLeanMeter(): Float =
+        if (shouldCounterSteer(input.steer)) 0f else input.steer
+
+    override fun setMotorcycle(motorcycle: LogicMotorcycle) {
+        this.motorcycle = motorcycle
+    }
 }
 
 class MotomanGameApp(
@@ -49,7 +89,10 @@ class MotomanGameApp(
     private val trackData: TrackData,
     private val glslTarget: GlslTarget,
     private val audio: Audio,
-    private val haptics: Haptics
+    private val haptics: Haptics,
+    private val config: RenderConfig = RenderConfig.ORIGINAL,
+    /** Desktop-only: log the bike's world x,z each step for steering direction tests. */
+    debugPositions: Boolean = false,
 ) : GameApp {
     val gameStateFlow = GameStateFlow()
     private lateinit var gl: Gl
@@ -73,11 +116,23 @@ class MotomanGameApp(
 
     private val lastCameraView = Matrix4()
     private var lastCameraViewReset = true
+
+    /** Output surface size, as distinct from the (possibly reduced) scene buffer size. */
+    private var screenWidth = 1
+    private var screenHeight = 1
+
+    private val debugPos: com.marcowong.motoman.track.math.Vector3? =
+        if (debugPositions) com.marcowong.motoman.track.math.Vector3() else null
+
+    private var standByPending = false
+    private var standByTimeRemaining = 0f
+    private var crashedPending = false
+    private var crashedTimeRemaining = 0f
     
-    private val useMotionBlur = true
-    private val useBloom = true
-    private val useAA = true
-    private val useLinearFilter = true
+    private val useMotionBlur get() = config.motionBlur
+    private val useBloom get() = config.bloom
+    private val useAA get() = config.antiAliasing
+    private val useLinearFilter get() = config.frameBufferLinearFilter
     
     private lateinit var skyBox: SkyBox
     private lateinit var track: SceneTrack
@@ -97,7 +152,12 @@ class MotomanGameApp(
     
     override fun create(gl: Gl, width: Int, height: Int) {
         this.gl = gl
-        textures = TextureCache(gl, assets)
+        // The original point-samples model textures (ConfigHelper.turnOnModelTextureLinearFilter
+        // is false). Linear here is the single biggest reason the port's surfaces look smoother
+        // and cleaner than the 2013 game's.
+        val modelFilter =
+            if (config.modelTextureLinearFilter) TextureFilter.Linear else TextureFilter.Nearest
+        textures = TextureCache(gl, assets, modelFilter, modelFilter)
         batch = MeshOptimized(gl)
         
         val preprocessor = ShaderPreprocessor(glslTarget)
@@ -217,11 +277,13 @@ class MotomanGameApp(
         bgm.play()
         
         batch.optimize()
-        
+
         resize(width, height)
     }
 
     override fun resize(width: Int, height: Int) {
+        screenWidth = width
+        screenHeight = height
         val aspectRatio = width.toFloat() / height.toFloat()
         camera.viewportWidth = aspectRatio
         camera.viewportHeight = 1f
@@ -231,8 +293,13 @@ class MotomanGameApp(
         bloomFrameBufferA?.dispose()
         bloomFrameBufferB?.dispose()
         
-        mainFrameBufferA = FrameBuffer(gl, width, height, true)
-        mainFrameBufferB = FrameBuffer(gl, width, height, true)
+        // The original renders the scene at half size and upscales (ConfigHelper
+        // .getResolutionReduction), which is a large part of why it looks soft rather than
+        // crisp. Clamped to at least 1px so a degenerate viewport cannot produce a 0-sized FBO.
+        val sceneWidth = kotlin.math.max(1, (width * config.resolutionReduction).toInt())
+        val sceneHeight = kotlin.math.max(1, (height * config.resolutionReduction).toInt())
+        mainFrameBufferA = FrameBuffer(gl, sceneWidth, sceneHeight, true)
+        mainFrameBufferB = FrameBuffer(gl, sceneWidth, sceneHeight, true)
         val bloomSize = 48
         bloomFrameBufferA = FrameBuffer(gl, kotlin.math.ceil(aspectRatio * bloomSize).toInt(), bloomSize, true)
         bloomFrameBufferB = FrameBuffer(gl, kotlin.math.ceil(aspectRatio * bloomSize).toInt(), bloomSize, true)
@@ -246,11 +313,10 @@ class MotomanGameApp(
 
     override fun update(dt: Float, input: InputState) {
         this.inputState = input
-        inputMeters = StubInputMeters(input) // Update reference if needed or rely on mutation
-        // Since we created it with a stub earlier, we can just update its fields if we made it mutable,
-        // or just recreate it and set to motorcycle (but motorcycle takes IMotorcycleInputMeters in constructor)
-        // Let's assume input state fields are updated directly by host, so we don't need to recreate.
-        
+        // Point the adapter the motorcycle already holds at this frame's input, rather than
+        // replacing the adapter (which the motorcycle would never see).
+        inputMeters.input = input
+
         if (gameUpdating) {
             deltaBudget += dt
             val deltaTarget = 1f / 60f
@@ -281,7 +347,12 @@ class MotomanGameApp(
                 track.logic.updateCurrentTrackSegment(rider.logic)
                 
                 if (isPersistUpdateStep) {
-                    // runGameRules(delta) // omitted crashes/respawn for basic loop
+                    runStandByRule(delta)
+                    debugPos?.let { v ->
+                        motorcycle.logic.state.pos.getTranslation(v)
+                        val s = motorcycle.logic.state
+                        println("POS ${v.x} ${v.z} steer ${inputState?.steer} lean ${s.leanAngle} tract ${s.frontTraction},${s.backTraction} crashed ${s.isCrashed}")
+                    }
                 }
                 
                 sfx.update(delta)
@@ -305,6 +376,42 @@ class MotomanGameApp(
         }
     }
 
+    /**
+     * The subset of the original `MotomanGameScreen.runGameRules` that keeps the bike rideable:
+     * the standby release and the crash respawn. Without the first, the bike is permanently
+     * immobile — every input is discarded by `Motorcycle.getEngineAndBrakeMeter` while
+     * `isStandBy` holds. Without the second, the first crash leaves the bike face-down forever.
+     *
+     * Finish/win handling from the original is still not ported.
+     */
+    private fun runStandByRule(delta: Float) {
+        if (standByTimeRemaining > 0f) standByTimeRemaining -= delta
+        if (crashedTimeRemaining > 0f) crashedTimeRemaining -= delta
+        val logic = motorcycle.logic
+
+        // Crash -> wait -> respawn at the track's spawn point, then stand by again.
+        if (!crashedPending && logic.state.isCrashed) {
+            crashedPending = true
+            crashedTimeRemaining = CRASH_SECONDS
+        }
+        if (crashedPending && crashedTimeRemaining <= 0f) {
+            crashedPending = false
+            logic.reset()
+            track.logic.getSpawnPosition(logic).`val`.copyInto(logic.state.pos.`val`, 0, 0, 16)
+            lastCameraViewReset = true
+        }
+
+        // Standby -> wait -> go.
+        if (!standByPending && logic.state.isStandBy) {
+            standByPending = true
+            standByTimeRemaining = STANDBY_SECONDS
+        }
+        if (standByPending && standByTimeRemaining <= 0f) {
+            standByPending = false
+            logic.go()
+        }
+    }
+
     override fun render() {
         var mainFB = mainFrameBufferA!!
         var mainFBSpare = mainFrameBufferB!!
@@ -312,7 +419,8 @@ class MotomanGameApp(
         val bloomFBB = bloomFrameBufferB!!
         
         mainFB.bind()
-        gl.glEnable(GL_TEXTURE_2D)
+        // No glEnable(GL_TEXTURE_2D): it is fixed-function GL, implicit under GLES 2.0 where it
+        // raises GL_INVALID_ENUM. Desktop GL 2.1 compat tolerated it; Android reported it.
         gl.glEnable(GL_CULL_FACE)
         gl.glDisable(GL_DEPTH_TEST)
         gl.glClearColor(0f, 0f, 0f, 1f)
@@ -377,7 +485,6 @@ class MotomanGameApp(
         if (useBloom) {
             bloomFBA.bind()
             gl.glDisable(GL_DEPTH_TEST)
-            gl.glEnable(GL_TEXTURE_2D)
             gl.glEnable(GL_CULL_FACE)
             maskShader.bind()
             maskShader.setUniformi("isNoLightEffect", 1)
@@ -456,6 +563,10 @@ class MotomanGameApp(
         
         gl.glDisable(GL_CULL_FACE)
         gl.glDisable(GL_DEPTH_TEST)
+        // Every FrameBuffer.bind() sets the viewport to its own size and end() does not restore
+        // it, so the final blit to the screen must set it explicitly. This was invisible while
+        // the scene buffers matched the window; with resolutionReduction they no longer do.
+        gl.glViewport(0, 0, screenWidth, screenHeight)
         ppFinalShader.bind()
         mainFB.texture.bind(0)
         frameBufferMeshContext.render(ppFinalShader)
@@ -476,4 +587,12 @@ class MotomanGameApp(
         sfx.dispose()
         bgm.dispose()
     }
+
+    private companion object {
+        /** Matches the original's `motorcycleStandByTimeRemaining = 2`. */
+        const val STANDBY_SECONDS = 2f
+        /** Matches the original's `motorcycleCrashedTimeRemaining = 2`. */
+        const val CRASH_SECONDS = 2f
+    }
+
 }
