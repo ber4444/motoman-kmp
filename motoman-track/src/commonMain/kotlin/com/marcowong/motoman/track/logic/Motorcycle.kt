@@ -18,6 +18,16 @@ class Motorcycle(
     @JvmField var  massCenterHeight = 0f
     @JvmField var  leanAngleMaxWhenRunning = 0f
     @JvmField var  leanAngleSafe = 0f
+
+    // Lean-feel knobs, defaulted to the original game's values so the physics-replay parity
+    // test is unaffected. The app lowers them (see MainMotorcycle) for a gentler ride where a
+    // held turn does not run its lean away into a crash.
+    /** Rate at which counter-steering tips the bike into a lean while turning in (upright). */
+    @JvmField var  counterSteeringLeanInc = 90f
+    /** Rate at which the lean meter deepens an already-established lean. */
+    @JvmField var  leanAnglePressure = 90f
+    /** Self-reinforcing "fall over" force that deepens an existing lean; the runaway term. */
+    @JvmField var  gravityForceWhenRunning = 25f
     
     private val engineOutputMin = 20f
     private val engineOutputMax = 200f
@@ -121,7 +131,6 @@ class Motorcycle(
         var rotAngle = 0f
         val leanToRotFactor = 2f
 
-        val counterSteeringLeanInc = 90f
         val counterSteeringAffectRotAngleFactor = 1 / 5f
         val counterSteeringMeter = getCounterSteeringMeter()
         val counterSteeringTractionFactor = if (state.frontTraction <= 0 && state.backTraction <= 0) 0f else 1f
@@ -146,7 +155,6 @@ class Motorcycle(
         state.pos.translate(massCenterShift * delta, 0f, 0f)
 
         val leanPressureForceRatio = 0.8f + 0.2f * (abs(state.leanAngle) / 90f)
-        val leanAnglePressure = 90f
         val leanAnglePressEpsilon = 10f
         val leanMeter = getLeanMeter()
         val leanRiderStrengthFactor = 2 / 3f + riderStrength * 1 / 3f
@@ -160,7 +168,6 @@ class Motorcycle(
         if (state.leanAngle > leanAngleMax) { state.leanAngle = leanAngleMax; isOverLean = true }
 
         val gravityForceRatio = abs(state.leanAngle) / 90f
-        val gravityForceWhenRunning = 25f
         val gravityForceWhenCrashed = gravityForceWhenRunning * 10f
         val gravityForce = if (state.isCrashed) gravityForceWhenCrashed else gravityForceWhenRunning
         if (state.leanAngle > 0) state.leanAngle += delta * gravityForceRatio * gravityForce

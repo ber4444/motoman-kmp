@@ -258,5 +258,11 @@ class MainMotorcycle(
         leanAngleMaxWhenRunningRenderHeightShift = 0.07f
         leanAngleMaxWhenCrashedRenderHeightShift = 0.7f
         logic.leanAngleSafe = 30f
+        // Gentler than the original: turn-in and lean build about half as fast and the self-
+        // reinforcing "fall over" force is roughly halved, so a held turn traces a wider, more
+        // controllable arc instead of leaning over and crashing. (Original: 90 / 90 / 25.)
+        logic.counterSteeringLeanInc = 45f
+        logic.leanAnglePressure = 50f
+        logic.gravityForceWhenRunning = 12f
     }
 }

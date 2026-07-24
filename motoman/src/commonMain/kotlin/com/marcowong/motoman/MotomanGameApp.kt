@@ -350,7 +350,8 @@ class MotomanGameApp(
                     runStandByRule(delta)
                     debugPos?.let { v ->
                         motorcycle.logic.state.pos.getTranslation(v)
-                        println("POS ${v.x} ${v.z} steer ${inputState?.steer}")
+                        val s = motorcycle.logic.state
+                        println("POS ${v.x} ${v.z} steer ${inputState?.steer} lean ${s.leanAngle} tract ${s.frontTraction},${s.backTraction} crashed ${s.isCrashed}")
                     }
                 }
                 
