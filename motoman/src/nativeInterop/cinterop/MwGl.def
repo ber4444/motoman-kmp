@@ -1,7 +1,7 @@
 package = mwgl
 headers = MwGl.h
 headerFilter = MwGl.h
-linkerOpts = -framework OpenGLES
+linkerOpts = 
 
 ---
 

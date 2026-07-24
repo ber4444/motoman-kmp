@@ -36,10 +36,8 @@ actual fun decodePixmap(bytes: ByteArray): Pixmap {
             error("Failed to create CGBitmapContext")
         }
         
-        // Fix origin: Core Graphics has bottom-left origin, Pixmap expects top-left.
-        CGContextTranslateCTM(context, 0.0, height.toDouble())
-        CGContextScaleCTM(context, 1.0, -1.0)
-        
+        // CGBitmapContext writes rows in the same top-left order Android/desktop hand to GL.
+        // Flipping here makes model UVs sample the wrong part of atlas textures.
         CGContextDrawImage(context, CGRectMake(0.0, 0.0, width.toDouble(), height.toDouble()), cgImage)
         
         CGContextRelease(context)

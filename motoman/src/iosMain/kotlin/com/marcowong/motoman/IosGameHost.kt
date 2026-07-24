@@ -78,7 +78,11 @@ class IosGameHost(private val debugGl: Boolean = false) {
         app.dispose()
     }
 
+    fun setSteer(steer: Float) {
+        input.steer = steer.coerceIn(-1f, 1f)
+    }
+
     fun setTilt(steer: Float) {
-        input.steer = steer
+        setSteer(steer)
     }
 }

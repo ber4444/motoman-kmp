@@ -8,20 +8,51 @@ import platform.UIKit.UIImpactFeedbackStyle
 import kotlin.math.log2
 
 class IosAudio : Audio {
-    private val engine = AVAudioEngine()
-    
+    private var engine: AVAudioEngine? = null
+    private var engineReady = false
+
     init {
-        engine.prepare()
-        engine.startAndReturnError(null)
+        // Configure audio session first — this establishes audio routes
+        // so AVAudioEngine can find output nodes.
+        val session = AVAudioSession.sharedInstance()
+        session.setCategory(AVAudioSessionCategoryPlayback, error = null)
+        session.setActive(true, error = null)
+
+        val isSimulator = platform.Foundation.NSProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] != null
+
+        // Check if there's actually an audio output route available, and skip if simulator
+        // (Simulator audio HAL is often broken and AVAudioEngine throws a fatal NSException).
+        val hasOutput = session.currentRoute.outputs.isNotEmpty()
+        if (hasOutput && !isSimulator) {
+            val e = AVAudioEngine()
+            e.prepare()
+            engineReady = e.startAndReturnError(null)
+            if (engineReady) engine = e
+        } else {
+            println("WARNING: No audio output route available. Audio will be silent.")
+        }
     }
     
     override fun newSound(path: String): Sound {
-        return IosSound(engine, path)
+        val e = engine
+        return if (e != null && engineReady) IosSound(e, path) else StubSound()
     }
 
     override fun newMusic(path: String): Music {
         return IosMusic(path)
     }
+}
+
+private class StubSound : Sound {
+    override fun play(volume: Float, pitch: Float, pan: Float): Long = 0L
+    override fun loop(volume: Float, pitch: Float, pan: Float): Long = 0L
+    override fun stop(soundId: Long) {}
+    override fun pause(soundId: Long) {}
+    override fun resume(soundId: Long) {}
+    override fun setVolume(soundId: Long, volume: Float) {}
+    override fun setPitch(soundId: Long, pitch: Float) {}
+    override fun setPan(soundId: Long, pan: Float, volume: Float) {}
+    override fun dispose() {}
 }
 
 class IosSound(private val engine: AVAudioEngine, path: String) : Sound {

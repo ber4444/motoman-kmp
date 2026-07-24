@@ -18,15 +18,30 @@ kotlin {
     }
 
     listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
+        val metalAngleSlice = if (it.name == "iosArm64") {
+            "ios-arm64_armv7"
+        } else {
+            "ios-arm64_i386_x86_64-simulator"
+        }
+        val metalAngleFrameworkSearchPath = rootProject.file(
+            "third_party/MetalANGLE/MetalANGLE.xcframework/$metalAngleSlice"
+        ).absolutePath
+
         it.binaries.framework {
             baseName = "Motoman"
             export(project(":motoman"))
+            linkerOpts("-F$metalAngleFrameworkSearchPath", "-framework", "MetalANGLE")
         }
     }
 
     sourceSets {
         all {
             languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+            languageSettings.optIn("org.jetbrains.compose.ExperimentalComposeLibrary")
+            languageSettings.optIn("org.jetbrains.compose.ui.ExperimentalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.window.ExperimentalComposeUiApi")
+            languageSettings.optIn("org.jetbrains.compose.ui.window.ExperimentalComposeUiApi")
         }
         val commonMain by getting {
             dependencies {

@@ -187,7 +187,7 @@ class IosGl : Gl {
 
     override fun glUniformMatrix4fv(location: Int, transpose: Boolean, value: FloatArray) {
         value.usePinned { pinned ->
-            mwgl_uniform_matrix4fv(location, 1, if (transpose) 1 else 0, pinned.addressOf(0))
+            mwgl_uniform_matrix4fv(location, value.size / 16, if (transpose) 1 else 0, pinned.addressOf(0))
         }
     }
 

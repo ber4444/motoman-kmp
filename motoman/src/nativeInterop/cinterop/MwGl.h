@@ -1,9 +1,84 @@
 #pragma once
-#include <OpenGLES/ES2/gl.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Define standard GL types to avoid including OpenGLES headers
+typedef unsigned int GLuint;
+typedef int GLint;
+typedef int GLsizei;
+typedef unsigned int GLenum;
+typedef unsigned char GLboolean;
+typedef unsigned int GLbitfield;
+
+// External GL functions that will be provided by MetalANGLE at runtime
+extern GLuint glCreateShader(GLenum type);
+extern void glShaderSource(GLuint shader, GLsizei count, const char *const*string, const GLint *length);
+extern void glCompileShader(GLuint shader);
+extern void glGetShaderiv(GLuint shader, GLenum pname, GLint *params);
+extern void glGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei *length, char *infoLog);
+extern void glDeleteShader(GLuint shader);
+extern GLuint glCreateProgram(void);
+extern void glAttachShader(GLuint program, GLuint shader);
+extern void glBindAttribLocation(GLuint program, GLuint index, const char *name);
+extern void glLinkProgram(GLuint program);
+extern void glGetProgramiv(GLuint program, GLenum pname, GLint *params);
+extern void glGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei *length, char *infoLog);
+extern void glDeleteProgram(GLuint program);
+extern void glUseProgram(GLuint program);
+extern GLint glGetAttribLocation(GLuint program, const char *name);
+extern GLint glGetUniformLocation(GLuint program, const char *name);
+extern void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const float *value);
+extern void glUniform1i(GLint location, GLint v0);
+extern void glUniform1f(GLint location, float v0);
+extern void glUniform2f(GLint location, float v0, float v1);
+extern void glUniform3f(GLint location, float v0, float v1, float v2);
+extern void glUniform4f(GLint location, float v0, float v1, float v2, float v3);
+extern void glUniform3fv(GLint location, GLsizei count, const float *value);
+extern void glUniform4fv(GLint location, GLsizei count, const float *value);
+extern void glGenBuffers(GLsizei n, GLuint *buffers);
+extern void glBufferData(GLenum target, GLsizei size, const void *data, GLenum usage);
+extern void glBindBuffer(GLenum target, GLuint buffer);
+extern void glDeleteBuffers(GLsizei n, const GLuint *buffers);
+extern void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
+extern void glEnableVertexAttribArray(GLuint index);
+extern void glDisableVertexAttribArray(GLuint index);
+extern void glGenTextures(GLsizei n, GLuint *textures);
+extern void glBindTexture(GLenum target, GLuint texture);
+extern void glActiveTexture(GLenum texture);
+extern void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
+extern void glTexParameteri(GLenum target, GLenum pname, GLint param);
+extern void glGenerateMipmap(GLenum target);
+extern void glDeleteTextures(GLsizei n, const GLuint *textures);
+extern void glGenFramebuffers(GLsizei n, GLuint *framebuffers);
+extern void glBindFramebuffer(GLenum target, GLuint framebuffer);
+extern void glDeleteFramebuffers(GLsizei n, const GLuint *framebuffers);
+extern void glFramebufferTexture2D(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+extern GLenum glCheckFramebufferStatus(GLenum target);
+extern void glGenRenderbuffers(GLsizei n, GLuint *renderbuffers);
+extern void glBindRenderbuffer(GLenum target, GLuint renderbuffer);
+extern void glDeleteRenderbuffers(GLsizei n, const GLuint *renderbuffers);
+extern void glRenderbufferStorage(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+extern void glFramebufferRenderbuffer(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+extern void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels);
+extern void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+extern void glClearColor(float red, float green, float blue, float alpha);
+extern void glClear(GLbitfield mask);
+extern void glEnable(GLenum cap);
+extern void glDisable(GLenum cap);
+extern void glDepthFunc(GLenum func);
+extern void glDepthMask(GLboolean flag);
+extern void glCullFace(GLenum mode);
+extern void glFrontFace(GLenum mode);
+extern void glBlendFunc(GLenum sfactor, GLenum dfactor);
+extern void glDrawArrays(GLenum mode, GLint first, GLsizei count);
+extern void glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices);
+extern GLenum glGetError(void);
+extern const unsigned char *glGetString(GLenum name);
+
+#define GL_COMPILE_STATUS 0x8B81
+#define GL_LINK_STATUS 0x8B82
 
 int mwgl_create_shader(int type);
 void mwgl_shader_source(int shader, const char* source);
