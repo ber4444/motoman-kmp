@@ -8,6 +8,9 @@ import com.marcowong.motoman.gl.GlslTarget
  *
  *   --frames N   auto-exit after N frames (CI smoke run); omit for an interactive window
  *   --model P    asset path of the OBJ to display (default: the bike)
+ *   --game       run the full game instead of the single-model viewer
+ *   --capture P  write the final frame to P as a PNG (needs --frames)
+ *   --drive T    hold throttle at T (0..1) so a scripted capture is taken in motion
  *
  * Requires `-XstartOnFirstThread` on macOS; `:motoman:runDesktop` adds it there.
  */
@@ -30,7 +33,15 @@ fun main(args: Array<String>) {
             trackData = trackData,
             glslTarget = GlslTarget.DESKTOP_120,
             audio = com.marcowong.motoman.audio.DesktopAudio(assets),
-            haptics = com.marcowong.motoman.audio.DesktopHaptics()
+            haptics = com.marcowong.motoman.audio.DesktopHaptics(),
+            config = RenderConfig(
+                resolutionReduction = opt("--res")?.toFloatOrNull() ?: 0.5f,
+                modelTextureLinearFilter = argv.contains("--tex-linear"),
+                frameBufferLinearFilter = argv.contains("--fb-linear"),
+                bloom = !argv.contains("--no-bloom"),
+                motionBlur = !argv.contains("--no-mb"),
+                antiAliasing = !argv.contains("--no-aa"),
+            ),
         )
     } else {
         ModelViewerApp(
@@ -43,11 +54,13 @@ fun main(args: Array<String>) {
     }
 
     val host = DesktopHost(
-        title = "Motoman — $modelPath",
+        title = if (isGame) "Motoman" else "Motoman — $modelPath",
         debugGl = true,
         maxFrames = frames,
         // Scripted runs must be reproducible frame-for-frame.
         fixedTimestep = if (frames > 0) 1f / 60f else null,
+        capturePath = opt("--capture"),
+        scriptedThrottle = opt("--drive")?.toFloatOrNull() ?: 0f,
     )
     host.run(app)
 

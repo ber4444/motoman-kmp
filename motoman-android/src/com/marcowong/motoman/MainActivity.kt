@@ -42,7 +42,20 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         val audio = AndroidAudio(this)
         val haptics = AndroidHaptics(this)
         val trackData = TrackGenerator().generate() ?: error("Failed to generate track data")
-        val app = MotomanGameApp(AndroidAssets(assets), trackData, GlslTarget.ES_100, audio, haptics)
+        // Render toggles are overridable from the launch intent so parity work can bisect
+        // effects on-device without a rebuild, e.g.
+        //   adb shell am start -n com.marcowong.motoman/.MainActivity --ez bloom false
+        val d = RenderConfig.ORIGINAL
+        val config = RenderConfig(
+            resolutionReduction = intent.getFloatExtra("res", d.resolutionReduction),
+            modelTextureLinearFilter = intent.getBooleanExtra("texLinear", d.modelTextureLinearFilter),
+            frameBufferLinearFilter = intent.getBooleanExtra("fbLinear", d.frameBufferLinearFilter),
+            bloom = intent.getBooleanExtra("bloom", d.bloom),
+            motionBlur = intent.getBooleanExtra("motionBlur", d.motionBlur),
+            antiAliasing = intent.getBooleanExtra("aa", d.antiAliasing),
+        )
+        android.util.Log.i("Motoman", "RenderConfig: $config")
+        val app = MotomanGameApp(AndroidAssets(assets), trackData, GlslTarget.ES_100, audio, haptics, config)
         
         glSurfaceView = GLSurfaceView(this)
         glSurfaceView.setEGLContextClientVersion(2)
