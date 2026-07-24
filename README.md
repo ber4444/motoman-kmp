@@ -8,7 +8,7 @@ Blender was used to create, model, and export all the 3D environmental and chara
 - Random seed generated racing tracks, unlimited tracks as you progress the game.
 - Incoming corner type notification like rally car games.
 - Active camera that looks into the incoming corner apex.
-- Steer with touch-and-drag on Android and keyboard arrows on desktop.
+- Steer with touch-and-drag on Android and iOS, and keyboard arrows on desktop.
 - Two separated steering controls: counter steering and leaning.
 - Supports using device tilt to lean (enabled natively via Android SensorManager and iOS CoreMotion).
 - A physical strength system to reduce the effectiveness of steering if too much action is inputted in a row.
@@ -61,4 +61,4 @@ While structured as a standard Kotlin Multiplatform (KMP) project, this game fea
 - **Native UI Overlay:** Instead of drawing the Heads-Up Display (HUD) and menus within the OpenGL context, the game relies on native UI toolkits. On Android and iOS, the HUD is built entirely in Compose Multiplatform, effortlessly overlaying the `GLSurfaceView` and `GLKView`.
 - **Custom Asset Pipeline:** Features a bespoke, lightweight `.obj` and `.mtl` parser written in pure Kotlin to load 3D assets and materials directly into the rendering pipeline.
 - **Native Shaders:** Advanced visual effects like Bloom, Motion Blur, and FXAA are implemented directly via custom GLSL shaders executing natively against the platform's graphics hardware.
-- **What is NOT in Kotlin:** The absolute outermost platform shell. On iOS, the `GameViewController` and `SceneDelegate` are written in **Swift**. This is because directly managing the iOS app lifecycle, hooking into `GLKViewController` for the native `CADisplayLink` render loop, and managing the `EAGLContext` is best done in the platform's native language. Swift simply constructs the OpenGL context and hands it off to the shared Kotlin engine.
+- **What is NOT in Kotlin:** The absolute outermost platform shell. On iOS, the `GameViewController` and `AppDelegate` are written in **Swift**. This is because directly managing the iOS app lifecycle, hooking into `GLKViewController` for the native `CADisplayLink` render loop, and managing the `EAGLContext` is best done in the platform's native language. Swift simply constructs the OpenGL context and hands it off to the shared Kotlin engine.

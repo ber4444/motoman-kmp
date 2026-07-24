@@ -3,16 +3,27 @@ package com.marcowong.motoman.audio
 import platform.AVFAudio.*
 import platform.Foundation.NSURL
 import platform.Foundation.NSBundle
+import platform.Foundation.NSProcessInfo
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
 import kotlin.math.log2
+
+val isSimulator = NSProcessInfo.processInfo.environment.containsKey("SIMULATOR_DEVICE_NAME")
 
 class IosAudio : Audio {
     private val engine = AVAudioEngine()
     
     init {
-        engine.prepare()
-        engine.startAndReturnError(null)
+        if (!isSimulator) {
+            try {
+                engine.prepare()
+                engine.startAndReturnError(null)
+            } catch (e: Exception) {
+                println("WARNING: AVAudioEngine failed to start: ${e.message}")
+            }
+        } else {
+            println("WARNING: Skipping AVAudioEngine start in simulator to prevent NSException crashes")
+        }
     }
     
     override fun newSound(path: String): Sound {
@@ -39,7 +50,8 @@ class IosSound(private val engine: AVAudioEngine, path: String) : Sound {
         file.readIntoBuffer(buffer, error = null)
     }
     
-    private fun getOrCreateNode(soundId: Long): Pair<AVAudioPlayerNode, AVAudioUnitTimePitch> {
+    private fun getOrCreateNode(soundId: Long): Pair<AVAudioPlayerNode, AVAudioUnitTimePitch>? {
+        if (isSimulator) return null
         return nodes.getOrPut(soundId) {
             val playerNode = AVAudioPlayerNode()
             val pitchNode = AVAudioUnitTimePitch()
@@ -61,7 +73,9 @@ class IosSound(private val engine: AVAudioEngine, path: String) : Sound {
     
     override fun play(volume: Float, pitch: Float, pan: Float): Long {
         val id = ++soundIdCounter
-        val (player, pitchNode) = getOrCreateNode(id)
+        val nodes = getOrCreateNode(id) ?: return id
+        val player = nodes.first
+        val pitchNode = nodes.second
         player.volume = volume
         player.pan = pan
         pitchNode.pitch = pitchToCents(pitch)
@@ -73,7 +87,9 @@ class IosSound(private val engine: AVAudioEngine, path: String) : Sound {
 
     override fun loop(volume: Float, pitch: Float, pan: Float): Long {
         val id = ++soundIdCounter
-        val (player, pitchNode) = getOrCreateNode(id)
+        val nodes = getOrCreateNode(id) ?: return id
+        val player = nodes.first
+        val pitchNode = nodes.second
         player.volume = volume
         player.pan = pan
         pitchNode.pitch = pitchToCents(pitch)

@@ -18,7 +18,7 @@ class IosGl : Gl {
     }
 
     override fun glClearColor(red: Float, green: Float, blue: Float, alpha: Float) {
-        platform.gles2.glClearColor(red, green, blue, alpha)
+        platform.gles2.glClearColor(1.0f, 0.0f, 0.0f, 1.0f)
     }
 
     override fun glEnable(cap: Int) {
