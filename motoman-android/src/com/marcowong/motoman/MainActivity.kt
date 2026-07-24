@@ -110,14 +110,37 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         event ?: return
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-            // Sensor values stay in the device's natural (portrait) frame even though the
-            // activity is locked to landscape, so the left/right lean axis is Y. Negated:
-            // without it, tilting the phone right steered the bike left.
-            val y = event.values[1]
-            inputState.steer = (-y / 5f).coerceIn(-1f, 1f)
-            inputState.throttle = 1f // Auto-throttle for now?
+            // The phone is held flat in landscape (screen up, like a tray). Sensor values stay
+            // in the device's natural (portrait) frame even though the UI is locked to
+            // landscape, so: Y is the left/right lean axis, X is the forward/back tilt axis.
+            val lean = event.values[1]
+            val pitch = event.values[0]
+
+            // Roll left/right to steer. Negated so tilting right steers right.
+            inputState.steer = (-lean / 5f).coerceIn(-1f, 1f)
+
+            // Tilt the far edge down (forward) to accelerate, tilt toward you to brake. A
+            // deadzone lets a level phone coast, and full throttle needs a firm tilt, so the
+            // bike no longer rockets — it used to be pinned at full throttle every frame.
+            val drive = when {
+                pitch > TILT_DEADZONE -> ((pitch - TILT_DEADZONE) / TILT_RANGE).coerceAtMost(1f)
+                pitch < -TILT_DEADZONE -> ((pitch + TILT_DEADZONE) / TILT_RANGE).coerceAtLeast(-1f)
+                else -> 0f
+            }
+            inputState.throttle = (drive * MAX_THROTTLE).coerceAtLeast(0f)
+            inputState.brake = (-drive).coerceAtLeast(0f)
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
+    private companion object {
+        // Tilt-throttle tuning, in m/s^2 of gravity on the forward/back axis (max ~9.8).
+        /** Level-ish phone coasts: no throttle or brake within this band (~6°). */
+        const val TILT_DEADZONE = 1.0f
+        /** Gravity delta beyond the deadzone for full input — ~30° of tilt. */
+        const val TILT_RANGE = 4.5f
+        /** Caps top-end throttle so the bike accelerates more gently than the old full-throttle. */
+        const val MAX_THROTTLE = 0.7f
+    }
 }
