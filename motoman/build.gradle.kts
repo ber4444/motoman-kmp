@@ -26,18 +26,24 @@ kotlin {
     androidTarget {
         publishLibraryVariants("release", "debug")
         compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+                }
             }
         }
     }
     jvm("desktop") {
         compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+                }
             }
         }
     }
+
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64())
 
     sourceSets {
         val commonMain by getting {
@@ -75,6 +81,10 @@ kotlin {
                 runtimeOnly("org.lwjgl:lwjgl-glfw:$lwjglVersion:$lwjglNatives")
                 runtimeOnly("org.lwjgl:lwjgl-stb:$lwjglVersion:$lwjglNatives")
             }
+        }
+        
+        all {
+            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
         }
     }
 }

@@ -3,7 +3,7 @@ package com.marcowong.motoman.track.math
 import kotlin.math.*
 
 class Matrix4 {
-    @JvmField val `val` = FloatArray(16)
+    val `val` = FloatArray(16)
     init { idt() }
 
     // Reusable scratch for look-at / inverse; not part of the matrix's value.

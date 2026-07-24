@@ -1,0 +1,33 @@
+name: iosApp
+options:
+  bundleIdPrefix: com.marcowong.motoman
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: iosApp
+      - path: ../motoman-android/assets/data
+        type: folder
+    info:
+      path: iosApp/Info.plist
+      properties:
+        UILaunchStoryboardName: LaunchScreen
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      ENABLE_USER_SCRIPT_SANDBOXING: NO
+      FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../motoman-ui/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+      OTHER_LDFLAGS: "-framework Motoman"
+    preBuildScripts:
+      - name: Build Framework
+        script: |
+          export JAVA_HOME=$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home -v 17)
+          cd "$SRCROOT/.."
+          ./gradlew :motoman-ui:embedAndSignAppleFrameworkForXcode
+        basedOnDependencyAnalysis: false

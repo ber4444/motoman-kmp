@@ -31,8 +31,8 @@ enum class TextureWrap(val glEnum: Int) {
  */
 class Texture(
     private val gl: Gl,
-    @JvmField val width: Int,
-    @JvmField val height: Int,
+    val width: Int,
+    val height: Int,
     pixels: ByteArray?,
     glFormat: Int,
     minFilter: TextureFilter = TextureFilter.Linear,

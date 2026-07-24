@@ -2,7 +2,7 @@ package com.marcowong.motoman.track.math
 
 import kotlin.math.sqrt
 
-class Vector3(@JvmField var x: Float = 0f, @JvmField var y: Float = 0f, @JvmField var z: Float = 0f) {
+class Vector3(var x: Float = 0f, var y: Float = 0f, var z: Float = 0f) {
     fun set(x: Float, y: Float, z: Float): Vector3 { this.x = x; this.y = y; this.z = z; return this }
     fun set(v: Vector3): Vector3 { this.x = v.x; this.y = v.y; this.z = v.z; return this }
     fun len(): Float = sqrt((x * x + y * y + z * z).toDouble()).toFloat()

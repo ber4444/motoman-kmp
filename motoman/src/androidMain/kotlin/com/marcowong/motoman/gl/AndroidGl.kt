@@ -11,6 +11,8 @@ private class AndroidGl : Gl {
 
     private val scratch = IntArray(1)
 
+    override val defaultFramebuffer: Int = 0
+
     override fun glViewport(x: Int, y: Int, width: Int, height: Int) = GLES20.glViewport(x, y, width, height)
     override fun glClear(mask: Int) = GLES20.glClear(mask)
     override fun glClearColor(red: Float, green: Float, blue: Float, alpha: Float) = GLES20.glClearColor(red, green, blue, alpha)
