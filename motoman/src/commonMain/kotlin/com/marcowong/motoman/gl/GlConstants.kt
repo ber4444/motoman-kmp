@@ -104,4 +104,7 @@ const val GL_COLOR_ATTACHMENT0 = 0x8CE0
 const val GL_DEPTH_ATTACHMENT = 0x8D00
 const val GL_RENDERBUFFER = 0x8D41
 const val GL_DEPTH_COMPONENT16 = 0x81A5
+// 24-bit depth. Desktop GL: core. GLES2: needs GL_OES_depth24 (same enum value); FrameBuffer
+// falls back to 16-bit where it is unavailable.
+const val GL_DEPTH_COMPONENT24 = 0x81A6
 const val GL_FRAMEBUFFER_COMPLETE = 0x8CD5
