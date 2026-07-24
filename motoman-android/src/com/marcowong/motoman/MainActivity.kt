@@ -2,12 +2,30 @@ package com.marcowong.motoman
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.layout.fillMaxSize
 import com.marcowong.motoman.ui.MotomanHUD
 import android.content.Context
+import android.os.SystemClock
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -29,6 +47,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private var accelerometer: Sensor? = null
     private val inputState = InputState()
     private var lastTime = 0L
+
+    /** True while a finger is down steering, so tilt does not fight the touch. */
+    @Volatile private var touchSteering = false
+    /** Boost expiry, in the SystemClock.uptimeMillis() clock; 0 when not boosting. */
+    @Volatile private var boostEndUptimeMs = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,6 +102,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 val now = System.nanoTime()
                 val dt = (now - lastTime) / 1000000000.0f
                 lastTime = now
+                // Boost forces full throttle for its duration, overriding the tilt throttle.
+                if (SystemClock.uptimeMillis() < boostEndUptimeMs) {
+                    inputState.throttle = 1f
+                    inputState.brake = 0f
+                }
                 app.update(dt, inputState)
                 app.render()
             }
@@ -86,9 +114,54 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         
         setContent {
             val state by app.gameStateFlow.state.collectAsState()
-            Box {
-                AndroidView(factory = { glSurfaceView })
+            Box(Modifier.fillMaxSize()) {
+                AndroidView(factory = { glSurfaceView }, modifier = Modifier.fillMaxSize())
+
+                // Touch-drag steering: press anywhere and slide left/right. Steer tracks how
+                // far the finger has moved from where it first touched down, so holding still
+                // goes straight and sliding left/right turns left/right. A quarter of the
+                // screen width is full lock. The boost button below is drawn on top, so
+                // presses there are consumed by it and never start a steering drag.
+                Box(
+                    Modifier.fillMaxSize().pointerInput(Unit) {
+                        val fullLockPx = size.width / 4f
+                        awaitEachGesture {
+                            val down = awaitFirstDown()
+                            touchSteering = true
+                            inputState.steer = 0f
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val change = event.changes.firstOrNull { it.id == down.id }
+                                if (change == null || !change.pressed) break
+                                val dx = change.position.x - down.position.x
+                                inputState.steer = (dx / fullLockPx).coerceIn(-1f, 1f)
+                                change.consume()
+                            }
+                            inputState.steer = 0f
+                            touchSteering = false
+                        }
+                    }
+                )
+
                 MotomanHUD(state = state)
+
+                // Boost button, lower-left: full throttle for 3 seconds.
+                Box(
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(24.dp)
+                        .size(96.dp)
+                        .background(Color(0x66FFFFFF), CircleShape)
+                        .clickable {
+                            boostEndUptimeMs = SystemClock.uptimeMillis() + BOOST_MILLIS
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BasicText(
+                        text = "BOOST",
+                        style = TextStyle(color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                    )
+                }
             }
         }
     }
@@ -116,8 +189,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             val lean = event.values[1]
             val pitch = event.values[0]
 
-            // Roll left/right to steer. Negated so tilting right steers right.
-            inputState.steer = (-lean / 5f).coerceIn(-1f, 1f)
+            // Roll left/right to steer, unless a finger is actively steering by touch.
+            // Negated so tilting right steers right.
+            if (!touchSteering) {
+                inputState.steer = (-lean / 5f).coerceIn(-1f, 1f)
+            }
 
             // Tilt the far edge down (forward) to accelerate, tilt toward you to brake. A
             // deadzone lets a level phone coast, and full throttle needs a firm tilt, so the
@@ -142,5 +218,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         const val TILT_RANGE = 4.5f
         /** Caps top-end throttle so the bike accelerates more gently than the old full-throttle. */
         const val MAX_THROTTLE = 0.7f
+        /** Boost button holds full throttle this long. */
+        const val BOOST_MILLIS = 3000L
     }
 }
