@@ -153,11 +153,15 @@ class MotomanGameApp(
     override fun create(gl: Gl, width: Int, height: Int) {
         this.gl = gl
         // The original point-samples model textures (ConfigHelper.turnOnModelTextureLinearFilter
-        // is false). Linear here is the single biggest reason the port's surfaces look smoother
-        // and cleaner than the 2013 game's.
-        val modelFilter =
+        // is false). With linear filtering on, minify through a mipmap chain (trilinear) so
+        // distant road/house/bumper texels stop aliasing into a shimmer at the horizon; Texture
+        // safely drops NPOT textures back to plain linear where mipmaps aren't allowed. The mag
+        // filter is never a mipmap filter. Parity (Nearest) keeps the original's point sampling.
+        val modelMinFilter =
+            if (config.modelTextureLinearFilter) TextureFilter.MipMapLinearLinear else TextureFilter.Nearest
+        val modelMagFilter =
             if (config.modelTextureLinearFilter) TextureFilter.Linear else TextureFilter.Nearest
-        textures = TextureCache(gl, assets, modelFilter, modelFilter)
+        textures = TextureCache(gl, assets, modelMinFilter, modelMagFilter)
         batch = MeshOptimized(gl)
         
         val preprocessor = ShaderPreprocessor(glslTarget)

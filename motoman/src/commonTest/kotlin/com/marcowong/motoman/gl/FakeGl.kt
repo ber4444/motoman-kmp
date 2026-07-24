@@ -91,8 +91,10 @@ class FakeGl : Gl {
         return ByteArray(width * height * if (format == GL_RGBA) 4 else 3)
     }
 
+    /** Extension string returned for GL_EXTENSIONS; empty means no NPOT-mipmap support. */
+    var glExtensions: String = ""
     override fun glGetError(): Int = GL_NO_ERROR
-    override fun glGetString(name: Int): String = "fake"
+    override fun glGetString(name: Int): String = if (name == GL_EXTENSIONS) glExtensions else "fake"
     override fun glGenFramebuffer(): Int = 1
     override fun glBindFramebuffer(target: Int, framebuffer: Int) {}
     override fun glDeleteFramebuffer(framebuffer: Int) {}

@@ -70,6 +70,23 @@ class TextureTest {
     }
 
     @Test
+    fun fallsBackToLinearForNonPowerOfTwoMipmapWithoutNpotSupport() {
+        val gl = FakeGl() // no GL_OES_texture_npot advertised
+        val texture = Texture(gl, pixmap(3, 4), minFilter = TextureFilter.MipMapLinearLinear)
+        // Mipmapping a NPOT texture would make it incomplete on GLES2; drop to plain Linear.
+        assertEquals(0, gl.countOf("glGenerateMipmap"))
+        assertEquals(TextureFilter.Linear, texture.minFilter)
+    }
+
+    @Test
+    fun mipmapsNonPowerOfTwoWhenNpotSupported() {
+        val gl = FakeGl().apply { glExtensions = "GL_OES_texture_npot" }
+        val texture = Texture(gl, pixmap(3, 4), minFilter = TextureFilter.MipMapLinearLinear)
+        assertEquals(1, gl.countOf("glGenerateMipmap"))
+        assertEquals(TextureFilter.MipMapLinearLinear, texture.minFilter)
+    }
+
+    @Test
     fun appliesFilterAndWrapParameters() {
         val gl = FakeGl()
         Texture(

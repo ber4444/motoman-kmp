@@ -98,6 +98,9 @@ class GoldenSceneTest {
             add("-cp"); add(System.getProperty("java.class.path"))
             add("com.marcowong.motoman.DesktopSmokeKt")
             add("--game"); add("--frames"); add("2")
+            // The golden baseline is the original's look; the interactive default is now the
+            // sharper HIGH_QUALITY preset, so pin parity here.
+            add("--parity")
             add("--capture"); add(target.absolutePath)
         }
         return try {

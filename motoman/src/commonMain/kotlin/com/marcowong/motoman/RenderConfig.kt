@@ -31,5 +31,17 @@ data class RenderConfig(
     companion object {
         /** The original game's settings. */
         val ORIGINAL = RenderConfig()
+
+        /**
+         * Sharper-than-original preset for desktop, where the half-resolution look is a
+         * limitation rather than a goal: the scene renders at full output resolution and both
+         * model textures and post-process buffers are linearly filtered. Effects (bloom, motion
+         * blur, AA) stay on. Not used for parity captures — [ORIGINAL] is the golden baseline.
+         */
+        val HIGH_QUALITY = RenderConfig(
+            resolutionReduction = 1f,
+            modelTextureLinearFilter = true,
+            frameBufferLinearFilter = true,
+        )
     }
 }
