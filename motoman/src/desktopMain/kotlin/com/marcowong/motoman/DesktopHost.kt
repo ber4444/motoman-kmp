@@ -56,6 +56,13 @@ class DesktopHost(
      * `<capturePath>_<frame>.png`, producing a filmstrip of a scripted maneuver.
      */
     private val captureEveryFrames: Int = 0,
+    /**
+     * Opt into a High-DPI (Retina) framebuffer on macOS. When on, the drawable is the display's
+     * real pixel size — e.g. a 1280x720 window backs a 2560x1440 framebuffer on a 2x display —
+     * so the scene is rendered and shown at native sharpness instead of being upscaled by the OS.
+     * Left off for frame captures, whose readback size must stay at the logical resolution.
+     */
+    private val retina: Boolean = true,
 ) {
     /** GL errors seen when [debugGl] is on; the verification plan asserts this is zero. */
     var glErrorCount: Int = 0
@@ -77,6 +84,13 @@ class DesktopHost(
             LwjglGL.createCapabilities()
             GLFW.glfwSwapInterval(1) // vsync
             GLFW.glfwShowWindow(window)
+
+            // The window is sized in points, but everything downstream works in framebuffer
+            // pixels (viewport, scene FBOs, glReadPixels). With Retina the two differ, so seed
+            // the initial size from the actual drawable rather than the requested window size.
+            val fbW = IntArray(1); val fbH = IntArray(1)
+            GLFW.glfwGetFramebufferSize(window, fbW, fbH)
+            width = fbW[0]; height = fbH[0]
 
             var raw: Gl = createPlatformGl()
             val debug = if (debugGl) GlDebug(raw).also { raw = it } else null
@@ -102,6 +116,9 @@ class DesktopHost(
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 2)
         GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 1)
         GLFW.glfwWindowHint(GLFW.GLFW_DEPTH_BITS, 24)
+        // macOS-only: back the window with a full-resolution Retina drawable instead of a
+        // point-sized one the OS stretches. Ignored on other platforms.
+        GLFW.glfwWindowHint(GLFW.GLFW_COCOA_RETINA_FRAMEBUFFER, if (retina) GLFW.GLFW_TRUE else GLFW.GLFW_FALSE)
 
         val handle = GLFW.glfwCreateWindow(width, height, title, NULL, NULL)
         check(handle != NULL) { "Failed to create the GLFW window" }

@@ -11,6 +11,8 @@ import com.marcowong.motoman.gl.GlslTarget
  *   --game       run the full game instead of the single-model viewer
  *   --capture P  write the final frame to P as a PNG (needs --frames)
  *   --drive T    hold throttle at T (0..1) so a scripted capture is taken in motion
+ *   --parity     render like the original 2013 game (half-res, point-sampled) instead of the
+ *                default high-quality desktop preset (full-res, linearly filtered)
  *
  * Requires `-XstartOnFirstThread` on macOS; `:motoman:runDesktop` adds it there.
  */
@@ -34,14 +36,24 @@ fun main(args: Array<String>) {
             glslTarget = GlslTarget.DESKTOP_120,
             audio = com.marcowong.motoman.audio.DesktopAudio(assets),
             haptics = com.marcowong.motoman.audio.DesktopHaptics(),
-            config = RenderConfig(
-                resolutionReduction = opt("--res")?.toFloatOrNull() ?: 0.5f,
-                modelTextureLinearFilter = argv.contains("--tex-linear"),
-                frameBufferLinearFilter = argv.contains("--fb-linear"),
-                bloom = !argv.contains("--no-bloom"),
-                motionBlur = !argv.contains("--no-mb"),
-                antiAliasing = !argv.contains("--no-aa"),
-            ),
+            // Default to the sharp desktop preset; --parity restores the original's look. Every
+            // individual flag still layers on top of whichever base, so bisecting one effect at a
+            // time (e.g. --parity --fb-linear) keeps working.
+            config = (if (argv.contains("--parity")) RenderConfig.ORIGINAL else RenderConfig.HIGH_QUALITY).let { base ->
+                fun flag(on: String, off: String, default: Boolean) = when {
+                    argv.contains(on) -> true
+                    argv.contains(off) -> false
+                    else -> default
+                }
+                base.copy(
+                    resolutionReduction = opt("--res")?.toFloatOrNull() ?: base.resolutionReduction,
+                    modelTextureLinearFilter = flag("--tex-linear", "--tex-nearest", base.modelTextureLinearFilter),
+                    frameBufferLinearFilter = flag("--fb-linear", "--fb-nearest", base.frameBufferLinearFilter),
+                    bloom = !argv.contains("--no-bloom"),
+                    motionBlur = !argv.contains("--no-mb"),
+                    antiAliasing = !argv.contains("--no-aa"),
+                )
+            },
             debugPositions = argv.contains("--debug-pos"),
         )
     } else {
@@ -81,6 +93,9 @@ fun main(args: Array<String>) {
         scriptedThrottle = if (turnTest || constSteer != null) 0.5f else opt("--drive")?.toFloatOrNull() ?: 0f,
         scriptedSteer = steerScript,
         captureEveryFrames = opt("--capture-every")?.toIntOrNull() ?: 0,
+        // Retina sharpens the interactive window but changes the pixel dimensions of a readback,
+        // so keep captures (golden baseline, parity refs) at the logical size and deterministic.
+        retina = opt("--capture") == null,
     )
     host.run(app)
 
