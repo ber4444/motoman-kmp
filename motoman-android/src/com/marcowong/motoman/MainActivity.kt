@@ -50,6 +50,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
     /** Boost expiry, in the SystemClock.uptimeMillis() clock; 0 when not boosting. */
     @Volatile private var boostEndUptimeMs = 0L
+    /** Whether the previous frame was inside the boost window (GL-thread only). */
+    private var wasBoosting = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -102,11 +104,18 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 val now = System.nanoTime()
                 val dt = (now - lastTime) / 1000000000.0f
                 lastTime = now
-                // Boost forces full throttle for its duration, overriding the tilt throttle.
-                if (SystemClock.uptimeMillis() < boostEndUptimeMs) {
+                // Boost forces full throttle for its 2-second window, overriding the tilt
+                // throttle, then releases. The explicit release when the window ends means a
+                // boost can never leave throttle stuck on even if the tilt sensor goes quiet;
+                // the next sensor event resumes normal control.
+                val boosting = SystemClock.uptimeMillis() < boostEndUptimeMs
+                if (boosting) {
                     inputState.throttle = 1f
                     inputState.brake = 0f
+                } else if (wasBoosting) {
+                    inputState.throttle = 0f
                 }
+                wasBoosting = boosting
                 app.update(dt, inputState)
                 app.render()
             }
@@ -144,7 +153,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
 
                 MotomanHUD(state = state)
 
-                // Boost button, lower-left: full throttle for 3 seconds.
+                // Boost button, lower-left: full throttle for 2 seconds, then auto-releases.
                 Box(
                     Modifier
                         .align(Alignment.BottomStart)
@@ -210,7 +219,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         const val TILT_RANGE = 4.5f
         /** Caps top-end throttle so the bike accelerates more gently than the old full-throttle. */
         const val MAX_THROTTLE = 0.7f
-        /** Boost button holds full throttle this long. */
-        const val BOOST_MILLIS = 1500L
+        /** Boost button holds full throttle this long, then releases automatically. */
+        const val BOOST_MILLIS = 2000L
     }
 }
