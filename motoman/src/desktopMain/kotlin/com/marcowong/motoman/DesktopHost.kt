@@ -46,6 +46,16 @@ class DesktopHost(
      * standstill highsides the bike, so a partial value is usually what you want.
      */
     private val scriptedThrottle: Float = 0f,
+    /**
+     * When set, steer is taken from this function of the frame index instead of the keyboard,
+     * so a turn-and-recover maneuver can be replayed deterministically for steering tests.
+     */
+    private val scriptedSteer: ((Int) -> Float)? = null,
+    /**
+     * When > 0 (with [capturePath] set), a PNG is written every this-many frames to
+     * `<capturePath>_<frame>.png`, producing a filmstrip of a scripted maneuver.
+     */
+    private val captureEveryFrames: Int = 0,
 ) {
     /** GL errors seen when [debugGl] is on; the verification plan asserts this is zero. */
     var glErrorCount: Int = 0
@@ -123,11 +133,17 @@ class DesktopHost(
             lastTime = now
 
             pollInput()
+            scriptedSteer?.let { input.steer = it(frame) }
             app.update(dt, input)
             app.render()
 
             // Read back before the swap: after swapping, the back buffer contents are undefined.
-            if (capturePath != null && maxFrames > 0 && frame >= maxFrames) capture(capturePath)
+            if (capturePath != null) {
+                if (captureEveryFrames > 0 && frame % captureEveryFrames == 0) {
+                    capture(capturePath.removeSuffix(".png") + "_$frame.png")
+                }
+                if (maxFrames > 0 && frame >= maxFrames) capture(capturePath)
+            }
 
             GLFW.glfwSwapBuffers(window)
         }

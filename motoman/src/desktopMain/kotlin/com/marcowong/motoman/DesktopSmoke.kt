@@ -42,6 +42,7 @@ fun main(args: Array<String>) {
                 motionBlur = !argv.contains("--no-mb"),
                 antiAliasing = !argv.contains("--no-aa"),
             ),
+            debugPositions = argv.contains("--debug-pos"),
         )
     } else {
         ModelViewerApp(
@@ -53,6 +54,23 @@ fun main(args: Array<String>) {
         )
     }
 
+    // --turn-test drives a reproducible steering maneuver: settle, then hold a right turn,
+    // then reverse to a left turn. It proves the bike both turns the expected way and can be
+    // brought back the other way (the "gets stuck one direction" bug).
+    val turnTest = argv.contains("--turn-test")
+    val constSteer = opt("--steer")?.toFloatOrNull()
+    val steerScript: ((Int) -> Float)? = when {
+        turnTest -> { frame ->
+            when {
+                frame < 180 -> 0f      // settle: standby releases at ~120, then accelerate
+                frame < 390 -> 0.5f    // steer right (+1 = right)
+                else -> -0.5f          // reverse: steer left, should recover and turn back
+            }
+        }
+        constSteer != null -> { frame -> if (frame < 180) 0f else constSteer } // settle, then hold
+        else -> null
+    }
+
     val host = DesktopHost(
         title = if (isGame) "Motoman" else "Motoman — $modelPath",
         debugGl = true,
@@ -60,7 +78,9 @@ fun main(args: Array<String>) {
         // Scripted runs must be reproducible frame-for-frame.
         fixedTimestep = if (frames > 0) 1f / 60f else null,
         capturePath = opt("--capture"),
-        scriptedThrottle = opt("--drive")?.toFloatOrNull() ?: 0f,
+        scriptedThrottle = if (turnTest || constSteer != null) 0.5f else opt("--drive")?.toFloatOrNull() ?: 0f,
+        scriptedSteer = steerScript,
+        captureEveryFrames = opt("--capture-every")?.toIntOrNull() ?: 0,
     )
     host.run(app)
 

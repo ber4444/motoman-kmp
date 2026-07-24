@@ -118,9 +118,9 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 // Touch-drag steering (the only steering input): press anywhere and slide.
                 // Steer tracks how far the finger has moved from where it first touched down,
                 // so holding still goes straight and sliding turns. A quarter of the screen
-                // width is full lock. Negated so sliding left turns left. The boost button
-                // below is drawn on top, so presses there are consumed by it and never start a
-                // steering drag.
+                // width is full lock. Sliding right is +steer (InputState: +1 = right), which
+                // the combined steering model turns into a right turn. The boost button below
+                // is drawn on top, so presses there are consumed by it and never start a drag.
                 Box(
                     Modifier.fillMaxSize().pointerInput(Unit) {
                         val fullLockPx = size.width / 4f
@@ -132,7 +132,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                                 val change = event.changes.firstOrNull { it.id == down.id }
                                 if (change == null || !change.pressed) break
                                 val dx = change.position.x - down.position.x
-                                inputState.steer = (-dx / fullLockPx).coerceIn(-1f, 1f)
+                                inputState.steer = (dx / fullLockPx).coerceIn(-1f, 1f)
                                 change.consume()
                             }
                             inputState.steer = 0f

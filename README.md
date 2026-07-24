@@ -12,9 +12,9 @@ Blender was used to create, model, and export all the 3D environmental and chara
 - Random seed generated racing tracks, unlimited tracks as you progress the game.
 - Incoming corner type notification like rally car games (powered by Jetpack Compose).
 - Active camera that looks into the incoming corner apex.
+- Steer with touch-and-drag on mobile and keybaord arrows on desktop
 - Two separated steering controls: counter steering and leaning.
 - Supports using device tilt to lean (enabled natively via Android SensorManager).
-- Supports simple traditional steering by combining the two steering methods.
 - A physical strength system to reduce the effectiveness of steering if too much action is inputted in a row.
 - Native GLSL shader effects (Bloom, Motion Blur, FXAA).
 

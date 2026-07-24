@@ -37,18 +37,51 @@ import com.marcowong.motoman.audio.MotorcycleSFX
 import com.marcowong.motoman.track.logic.Motorcycle as LogicMotorcycle
 
 /**
- * Adapts the host's [InputState] to the physics' meter interface.
+ * Adapts the host's [InputState] to the physics' meter interface, using the original game's
+ * "combined" one-stick steering model (`MotorcycleInputMetersEasy`).
  *
- * [input] is a `var` on purpose: the motorcycle is handed this object once at construction and
- * keeps that reference forever, so the live [InputState] has to be swapped in here. Replacing
- * the *adapter* instead left the motorcycle reading a dead InputState that nothing ever wrote
- * to, which meant no throttle, brake or steering reached the physics on any platform.
+ * A single [InputState.steer] value drives the bike. The physics has two separate steering
+ * meters — counter-steering (initiates and reverses a lean) and leaning (deepens a turn) — and
+ * the trick is that the input acts as **either one or the other**, never both at once:
+ *
+ *  - steering *against* the current lean, or while nearly upright, is counter-steering;
+ *  - steering *into* an established lean is leaning.
+ *
+ * The previous stub applied both simultaneously (and negated counter-steering), so they fought
+ * each other: once leaned, the bike could not be brought back and got stuck turning one way.
+ *
+ * [input] is a `var` on purpose: the motorcycle keeps this adapter for its whole life, so the
+ * live [InputState] is swapped in here rather than replacing the adapter.
  */
 class StubInputMeters(var input: InputState) : IMotorcycleInputMeters {
+    private var motorcycle: LogicMotorcycle? = null
+
     override fun getEngineAndBrakeMeter(): Float = input.throttle - input.brake
-    override fun getCounterSteeringMeter(): Float = -input.steer
-    override fun getLeanMeter(): Float = input.steer
-    override fun setMotorcycle(motorcycle: LogicMotorcycle) {}
+
+    /** Matches the original when |lean| is below this fraction of the safe angle, steer counter-steers. */
+    private val useMoreCounterSteeringRatio = 0.75f
+
+    private fun shouldCounterSteer(meter: Float): Boolean {
+        val moto = motorcycle ?: return true
+        val leanAngle = moto.state.leanAngle
+        // Steering opposite the current lean is always a counter-steer (recover / reverse).
+        if (meter < 0f && leanAngle > 0f) return true
+        if (meter > 0f && leanAngle < 0f) return true
+        // Near upright, steering counter-steers to tip the bike into a new lean.
+        if (kotlin.math.abs(leanAngle) <= moto.leanAngleSafe * useMoreCounterSteeringRatio) return true
+        // Already leaned and steering into it: lean instead.
+        return false
+    }
+
+    override fun getCounterSteeringMeter(): Float =
+        if (shouldCounterSteer(input.steer)) input.steer else 0f
+
+    override fun getLeanMeter(): Float =
+        if (shouldCounterSteer(input.steer)) 0f else input.steer
+
+    override fun setMotorcycle(motorcycle: LogicMotorcycle) {
+        this.motorcycle = motorcycle
+    }
 }
 
 class MotomanGameApp(
@@ -58,6 +91,8 @@ class MotomanGameApp(
     private val audio: Audio,
     private val haptics: Haptics,
     private val config: RenderConfig = RenderConfig.ORIGINAL,
+    /** Desktop-only: log the bike's world x,z each step for steering direction tests. */
+    debugPositions: Boolean = false,
 ) : GameApp {
     val gameStateFlow = GameStateFlow()
     private lateinit var gl: Gl
@@ -85,6 +120,9 @@ class MotomanGameApp(
     /** Output surface size, as distinct from the (possibly reduced) scene buffer size. */
     private var screenWidth = 1
     private var screenHeight = 1
+
+    private val debugPos: com.marcowong.motoman.track.math.Vector3? =
+        if (debugPositions) com.marcowong.motoman.track.math.Vector3() else null
 
     private var standByPending = false
     private var standByTimeRemaining = 0f
@@ -310,6 +348,10 @@ class MotomanGameApp(
                 
                 if (isPersistUpdateStep) {
                     runStandByRule(delta)
+                    debugPos?.let { v ->
+                        motorcycle.logic.state.pos.getTranslation(v)
+                        println("POS ${v.x} ${v.z} steer ${inputState?.steer}")
+                    }
                 }
                 
                 sfx.update(delta)
