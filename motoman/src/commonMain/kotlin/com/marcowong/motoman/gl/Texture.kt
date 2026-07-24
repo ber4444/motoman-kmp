@@ -79,8 +79,18 @@ class Texture(
             width, height, 0,
             glFormat, GL_UNSIGNED_BYTE, pixels,
         )
-        // Mipmaps must exist before a mipmapping min filter is legal.
-        if (minFilter.isMipMap && pixels != null) gl.glGenerateMipmap(GL_TEXTURE_2D)
+        // A mipmapping min filter needs a mip chain to exist first. On GLES2 a non-power-of-two
+        // texture can only be mipmapped when GL_OES_texture_npot is present — otherwise mipmaps
+        // (and REPEAT wrap) make the texture incomplete and it samples black. Power-of-two
+        // textures are always safe. Where mipmaps aren't allowed, fall back to plain Linear so
+        // the texture stays valid rather than sampling black.
+        if (minFilter.isMipMap && pixels != null) {
+            if (isPowerOfTwo(width) && isPowerOfTwo(height) || supportsNpotMipmaps(gl)) {
+                gl.glGenerateMipmap(GL_TEXTURE_2D)
+            } else {
+                this.minFilter = TextureFilter.Linear
+            }
+        }
         applyFilters()
         applyWraps()
     }
@@ -121,4 +131,16 @@ class Texture(
             handle = 0
         }
     }
+}
+
+private fun isPowerOfTwo(n: Int): Boolean = n > 0 && (n and (n - 1)) == 0
+
+/**
+ * Whether the context can mipmap (and REPEAT-wrap) non-power-of-two textures. Desktop GL 2.x
+ * has NPOT in core and lists `GL_ARB_texture_non_power_of_two`; GLES 2.0 needs
+ * `GL_OES_texture_npot`. Absent either, an NPOT texture must stay non-mipmapped.
+ */
+private fun supportsNpotMipmaps(gl: Gl): Boolean {
+    val ext = gl.glGetString(GL_EXTENSIONS) ?: return false
+    return "GL_OES_texture_npot" in ext || "texture_non_power_of_two" in ext
 }
