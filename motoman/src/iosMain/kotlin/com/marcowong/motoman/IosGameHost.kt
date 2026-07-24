@@ -44,7 +44,7 @@ class IosGameHost(private val debugGl: Boolean = false) {
         val haptics = IosHaptics()
         val trackData = TrackGenerator().generate()!!
 
-        app = MotomanGameApp(assets, trackData, GlslTarget.ES_100, audio, haptics)
+        app = MotomanGameApp(assets, trackData, GlslTarget.ES_100, audio, haptics, RenderConfig.HIGH_QUALITY)
         app.create(gl, widthPx, heightPx)
     }
 

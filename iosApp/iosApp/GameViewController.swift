@@ -30,14 +30,13 @@ class GameViewController: UIViewController {
             fatalError("Failed to set MGLContext current in viewDidLoad")
         }
 
-        // Initialize game engine with screen-sized framebuffer
-        let scale = UIScreen.main.scale
-        let screenBounds = UIScreen.main.bounds
-        let width = Int32(screenBounds.width * scale)
-        let height = Int32(screenBounds.height * scale)
+        // Initialize game engine with MetalANGLE's actual drawable size.
+        let drawableSize = drawablePixelSize(for: mglLayer)
+        let width = Int32(drawableSize.width)
+        let height = Int32(drawableSize.height)
         NSLog("GameViewController: host.create width=\(width) height=\(height)")
         host.create(widthPx: width, heightPx: height)
-        lastDrawableSize = CGSize(width: CGFloat(width), height: CGFloat(height))
+        lastDrawableSize = drawableSize
 
         startRendering()
     }
@@ -92,17 +91,38 @@ class GameViewController: UIViewController {
     private func resizeHostIfNeeded() {
         guard host != nil else { return }
 
-        let scale = view.window?.screen.scale ?? UIScreen.main.scale
-        let width = Int32((view.bounds.width * scale).rounded())
-        let height = Int32((view.bounds.height * scale).rounded())
+        let mglLayer = view.layer as! MGLLayer
+        let drawableSize = drawablePixelSize(for: mglLayer)
+        let width = Int32(drawableSize.width)
+        let height = Int32(drawableSize.height)
         guard width > 0, height > 0 else { return }
 
-        let drawableSize = CGSize(width: CGFloat(width), height: CGFloat(height))
         guard drawableSize != lastDrawableSize else { return }
 
         NSLog("GameViewController: host.resize width=\(width) height=\(height)")
         host.resize(widthPx: width, heightPx: height)
         lastDrawableSize = drawableSize
+    }
+
+    private func drawablePixelSize(for layer: MGLLayer) -> CGSize {
+        updateDrawableScale()
+
+        let size = layer.drawableSize
+        if size.width > 0, size.height > 0 {
+            return CGSize(width: size.width.rounded(), height: size.height.rounded())
+        }
+
+        let scale = view.window?.screen.scale ?? UIScreen.main.scale
+        return CGSize(
+            width: (view.bounds.width * scale).rounded(),
+            height: (view.bounds.height * scale).rounded()
+        )
+    }
+
+    private func updateDrawableScale() {
+        let scale = view.window?.screen.scale ?? UIScreen.main.scale
+        view.contentScaleFactor = scale
+        view.layer.contentsScale = scale
     }
 
     deinit {
