@@ -8,13 +8,13 @@ package com.marcowong.motoman.track.math
  */
 open class Frustum {
     /** The eight clip-space corners, transformed to world space by [update]. */
-    @JvmField val planePoints: Array<Vector3> = Array(8) { Vector3() }
+    val planePoints: Array<Vector3> = Array(8) { Vector3() }
 
     /** Flat backing array (x,y,z ×8) reused during [update] and by portal subclasses. */
-    @JvmField val planePointsArray = FloatArray(8 * 3)
+    val planePointsArray = FloatArray(8 * 3)
 
     /** near, far, left, right, top, bottom. */
-    @JvmField val planes: Array<Plane> = Array(6) { Plane() }
+    val planes: Array<Plane> = Array(6) { Plane() }
 
     /**
      * Rebuilds the frustum from a camera's inverse projection-view matrix by projecting

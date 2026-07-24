@@ -12,7 +12,7 @@ package com.marcowong.motoman.gl
  * @param trace when true, every call is emitted to [log] (verbose).
  */
 class GlDebug(
-    private val delegate: Gl,
+    val delegate: Gl,
     private val checkErrors: Boolean = true,
     private val log: (String) -> Unit = ::println,
     private val trace: Boolean = false,
@@ -22,6 +22,9 @@ class GlDebug(
         private set
     var lastError: Int = GL_NO_ERROR
         private set
+
+    override val defaultFramebuffer: Int
+        get() = delegate.defaultFramebuffer
 
     private inline fun <T> op(name: String, block: () -> T): T {
         if (trace) log("gl.$name")

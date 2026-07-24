@@ -5,10 +5,10 @@ package com.marcowong.motoman.track.math
  * limited to what the engine's materials and vertex packing use.
  */
 class Color(
-    @JvmField var r: Float = 0f,
-    @JvmField var g: Float = 0f,
-    @JvmField var b: Float = 0f,
-    @JvmField var a: Float = 0f,
+    var r: Float = 0f,
+    var g: Float = 0f,
+    var b: Float = 0f,
+    var a: Float = 0f,
 ) {
     fun set(r: Float, g: Float, b: Float, a: Float): Color {
         this.r = r; this.g = g; this.b = b; this.a = a

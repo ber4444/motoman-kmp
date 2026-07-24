@@ -13,15 +13,15 @@ import kotlin.math.sign
 import kotlin.math.sqrt
 
 class Track(trackData: TrackData) {
-    @JvmField val trackSegments: List<TrackSegment> = trackData.trackSegments!!
-    @JvmField val tsStart: TrackSegment
-    @JvmField val tsEnd: TrackSegment
-    @JvmField val trackSegmentsOfStart: List<TrackSegment>
-    @JvmField val trackSegmentsOfEnd: List<TrackSegment>
-    @JvmField val trackScaleFactor = 40f
-    @JvmField val trackSegHeight = 5f
-    @JvmField val trackScaleMat = Matrix4()
-    @JvmField val trackTSLen: Float
+    val trackSegments: List<TrackSegment> = trackData.trackSegments!!
+    val tsStart: TrackSegment
+    val tsEnd: TrackSegment
+    val trackSegmentsOfStart: List<TrackSegment>
+    val trackSegmentsOfEnd: List<TrackSegment>
+    val trackScaleFactor = 40f
+    val trackSegHeight = 5f
+    val trackScaleMat = Matrix4()
+    val trackTSLen: Float
 
     init {
         trackScaleMat.scale(trackScaleFactor, trackSegHeight, trackScaleFactor)

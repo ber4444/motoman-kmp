@@ -12,7 +12,7 @@ class Mesh(
     private val gl: Gl,
     isStatic: Boolean,
     maxIndices: Int,
-    @JvmField val attributes: VertexAttributes,
+    val attributes: VertexAttributes,
 ) {
     private val usage = if (isStatic) GL_STATIC_DRAW else GL_DYNAMIC_DRAW
 

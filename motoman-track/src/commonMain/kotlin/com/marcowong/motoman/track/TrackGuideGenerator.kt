@@ -7,7 +7,7 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 class TrackGuideGenerator {
-    @JvmField var earlyNoticeDistance = 20f
+    var earlyNoticeDistance = 20f
     
     private val getSegAngleVec = Vector3()
     private fun getSegAngle(ts: TrackSegment): Float {

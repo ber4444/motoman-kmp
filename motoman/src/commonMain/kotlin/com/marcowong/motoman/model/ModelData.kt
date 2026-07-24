@@ -7,23 +7,23 @@ import com.marcowong.motoman.track.math.Color
 
 /** A loaded model: one or more sub-meshes, each with its own material. */
 class ModelData {
-    @JvmField var subMeshes: Array<SubMeshData> = emptyArray()
+    var subMeshes: Array<SubMeshData> = emptyArray()
 }
 
 class SubMeshData {
-    @JvmField var name: String = ""
-    @JvmField var mesh: MeshData? = null
-    @JvmField var material: MaterialData? = null
-    @JvmField var primitiveType: Int = GL_TRIANGLES
+    var name: String = ""
+    var mesh: MeshData? = null
+    var material: MaterialData? = null
+    var primitiveType: Int = GL_TRIANGLES
 }
 
 /** Interleaved vertex data plus optional indices, as produced by the OBJ loader. */
 class MeshData {
-    @JvmField var vertices: FloatArray = FloatArray(0)
-    @JvmField var indices: ShortArray? = null
-    @JvmField var hasNorms: Boolean = false
-    @JvmField var hasUVs: Boolean = false
-    @JvmField var hasSkeleton: Boolean = false
+    var vertices: FloatArray = FloatArray(0)
+    var indices: ShortArray? = null
+    var hasNorms: Boolean = false
+    var hasUVs: Boolean = false
+    var hasSkeleton: Boolean = false
 
     /** Floats per vertex for this layout. */
     val vertexSize: Int
@@ -38,13 +38,13 @@ class MeshData {
  * texture; [diffuseTexture] is attached later by the renderer, which is what keeps the
  * OBJ/MTL loader free of GL and testable in `commonMain`.
  */
-class MaterialData(@JvmField val name: String) {
-    @JvmField var diffuseTextureName: String? = null
-    @JvmField var diffuseTexture: Texture? = null
-    @JvmField var ambientColor: Color = Color(1f, 1f, 1f, 1f)
-    @JvmField var diffuseColor: Color = Color(1f, 1f, 1f, 1f)
-    @JvmField var specularColor: Color = Color(1f, 1f, 1f, 1f)
-    @JvmField var shininessColor: Color = Color(1f, 1f, 1f, 1f)
+class MaterialData(val name: String) {
+    var diffuseTextureName: String? = null
+    var diffuseTexture: Texture? = null
+    var ambientColor: Color = Color(1f, 1f, 1f, 1f)
+    var diffuseColor: Color = Color(1f, 1f, 1f, 1f)
+    var specularColor: Color = Color(1f, 1f, 1f, 1f)
+    var shininessColor: Color = Color(1f, 1f, 1f, 1f)
 
     /** Binds this material's texture and colours to the standard shader's uniforms. */
     fun bind(program: ShaderProgram) {
