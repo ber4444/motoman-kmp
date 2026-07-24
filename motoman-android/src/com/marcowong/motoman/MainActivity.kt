@@ -48,8 +48,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private val inputState = InputState()
     private var lastTime = 0L
 
-    /** True while a finger is down steering, so tilt does not fight the touch. */
-    @Volatile private var touchSteering = false
     /** Boost expiry, in the SystemClock.uptimeMillis() clock; 0 when not boosting. */
     @Volatile private var boostEndUptimeMs = 0L
 
@@ -117,28 +115,27 @@ class MainActivity : ComponentActivity(), SensorEventListener {
             Box(Modifier.fillMaxSize()) {
                 AndroidView(factory = { glSurfaceView }, modifier = Modifier.fillMaxSize())
 
-                // Touch-drag steering: press anywhere and slide left/right. Steer tracks how
-                // far the finger has moved from where it first touched down, so holding still
-                // goes straight and sliding left/right turns left/right. A quarter of the
-                // screen width is full lock. The boost button below is drawn on top, so
-                // presses there are consumed by it and never start a steering drag.
+                // Touch-drag steering (the only steering input): press anywhere and slide.
+                // Steer tracks how far the finger has moved from where it first touched down,
+                // so holding still goes straight and sliding turns. A quarter of the screen
+                // width is full lock. Negated so sliding left turns left. The boost button
+                // below is drawn on top, so presses there are consumed by it and never start a
+                // steering drag.
                 Box(
                     Modifier.fillMaxSize().pointerInput(Unit) {
                         val fullLockPx = size.width / 4f
                         awaitEachGesture {
                             val down = awaitFirstDown()
-                            touchSteering = true
                             inputState.steer = 0f
                             while (true) {
                                 val event = awaitPointerEvent()
                                 val change = event.changes.firstOrNull { it.id == down.id }
                                 if (change == null || !change.pressed) break
                                 val dx = change.position.x - down.position.x
-                                inputState.steer = (dx / fullLockPx).coerceIn(-1f, 1f)
+                                inputState.steer = (-dx / fullLockPx).coerceIn(-1f, 1f)
                                 change.consume()
                             }
                             inputState.steer = 0f
-                            touchSteering = false
                         }
                     }
                 )
@@ -183,21 +180,14 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         event ?: return
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-            // The phone is held flat in landscape (screen up, like a tray). Sensor values stay
-            // in the device's natural (portrait) frame even though the UI is locked to
-            // landscape, so: Y is the left/right lean axis, X is the forward/back tilt axis.
-            val lean = event.values[1]
+            // Tilt controls throttle only — steering is by touch drag (see setContent). The
+            // phone is held flat in landscape (screen up); sensor values stay in the device's
+            // natural (portrait) frame even though the UI is locked to landscape, so the
+            // forward/back tilt axis is X.
             val pitch = event.values[0]
 
-            // Roll left/right to steer, unless a finger is actively steering by touch.
-            // Negated so tilting right steers right.
-            if (!touchSteering) {
-                inputState.steer = (-lean / 5f).coerceIn(-1f, 1f)
-            }
-
             // Tilt the far edge down (forward) to accelerate, tilt toward you to brake. A
-            // deadzone lets a level phone coast, and full throttle needs a firm tilt, so the
-            // bike no longer rockets — it used to be pinned at full throttle every frame.
+            // deadzone lets a level phone coast, and full throttle needs a firm tilt.
             val drive = when {
                 pitch > TILT_DEADZONE -> ((pitch - TILT_DEADZONE) / TILT_RANGE).coerceAtMost(1f)
                 pitch < -TILT_DEADZONE -> ((pitch + TILT_DEADZONE) / TILT_RANGE).coerceAtLeast(-1f)
@@ -219,6 +209,6 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         /** Caps top-end throttle so the bike accelerates more gently than the old full-throttle. */
         const val MAX_THROTTLE = 0.7f
         /** Boost button holds full throttle this long. */
-        const val BOOST_MILLIS = 3000L
+        const val BOOST_MILLIS = 1500L
     }
 }
