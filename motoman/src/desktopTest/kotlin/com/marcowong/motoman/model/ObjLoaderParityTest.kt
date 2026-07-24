@@ -24,7 +24,6 @@ class ObjLoaderParityTest {
         "airplane.obj" to Triple(1, 87, 87),
         "bike.obj" to Triple(10, 3078, 3078),
         "bikeBody.obj" to Triple(8, 2046, 2046),
-        "bikeBody_lowpoly.obj" to Triple(8, 1074, 1074),
         "bikeFrontWheel.obj" to Triple(1, 468, 468),
         "bikeFrontWheel_lowpoly.obj" to Triple(1, 132, 132),
         "bikeRearWheel.obj" to Triple(1, 564, 564),

@@ -22,6 +22,12 @@ enum class TextureWrap(val glEnum: Int) {
 /**
  * A GL texture object. Port of the parts of libGDX `Texture` the engine uses, with
  * `TextureData` folded in — construction takes an already-decoded [Pixmap].
+ *
+ * **Wrap defaults to [TextureWrap.ClampToEdge], matching libGDX.** This is not cosmetic: many
+ * of the game's textures are non-power-of-two (`tile.jpg` is 1229x1142, `hills.jpg` 1000x1000,
+ * `tile7.jpg` 512x384). Under GLES 2.0 an NPOT texture with `GL_REPEAT` — or a mipmapping min
+ * filter — is *incomplete* and samples as transparent black, so the surface silently vanishes
+ * on Android while rendering correctly on desktop GL 2.1, which supports NPOT fully.
  */
 class Texture(
     private val gl: Gl,
@@ -31,16 +37,16 @@ class Texture(
     glFormat: Int,
     minFilter: TextureFilter = TextureFilter.Linear,
     magFilter: TextureFilter = TextureFilter.Linear,
-    uWrap: TextureWrap = TextureWrap.Repeat,
-    vWrap: TextureWrap = TextureWrap.Repeat,
+    uWrap: TextureWrap = TextureWrap.ClampToEdge,
+    vWrap: TextureWrap = TextureWrap.ClampToEdge,
 ) {
     constructor(
         gl: Gl,
         pixmap: Pixmap,
         minFilter: TextureFilter = TextureFilter.Linear,
         magFilter: TextureFilter = TextureFilter.Linear,
-        uWrap: TextureWrap = TextureWrap.Repeat,
-        vWrap: TextureWrap = TextureWrap.Repeat,
+        uWrap: TextureWrap = TextureWrap.ClampToEdge,
+        vWrap: TextureWrap = TextureWrap.ClampToEdge,
     ) : this(gl, pixmap.width, pixmap.height, pixmap.pixels, pixmap.glFormat, minFilter, magFilter, uWrap, vWrap)
 
     constructor(
@@ -50,8 +56,8 @@ class Texture(
         glFormat: Int = GL_RGBA,
         minFilter: TextureFilter = TextureFilter.Linear,
         magFilter: TextureFilter = TextureFilter.Linear,
-        uWrap: TextureWrap = TextureWrap.Repeat,
-        vWrap: TextureWrap = TextureWrap.Repeat,
+        uWrap: TextureWrap = TextureWrap.ClampToEdge,
+        vWrap: TextureWrap = TextureWrap.ClampToEdge,
     ) : this(gl, width, height, null, glFormat, minFilter, magFilter, uWrap, vWrap)
 
     var handle: Int = gl.glGenTexture()

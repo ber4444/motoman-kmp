@@ -80,7 +80,10 @@ private class AndroidGl : Gl {
     override fun glUniform3f(location: Int, x: Float, y: Float, z: Float) = GLES20.glUniform3f(location, x, y, z)
     override fun glUniform4f(location: Int, x: Float, y: Float, z: Float, w: Float) = GLES20.glUniform4f(location, x, y, z, w)
     override fun glUniformMatrix4fv(location: Int, transpose: Boolean, value: FloatArray) =
-        GLES20.glUniformMatrix4fv(location, 1, transpose, value, 0)
+        // The count is how many mat4s are in `value`, not 1. Hardcoding 1 uploaded only the
+        // first matrix of an array uniform, leaving the rest zeroed — which silently collapsed
+        // every skeleton-instanced mesh (the ground tiles, the track) to a degenerate point.
+        GLES20.glUniformMatrix4fv(location, value.size / 16, transpose, value, 0)
 
     override fun glActiveTexture(texture: Int) = GLES20.glActiveTexture(texture)
     override fun glGenTexture(): Int {

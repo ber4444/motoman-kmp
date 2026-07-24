@@ -5,6 +5,7 @@ import com.marcowong.motoman.gl.Gl
 import com.marcowong.motoman.gl.IMeshContext
 import com.marcowong.motoman.gl.MeshOptimized
 import com.marcowong.motoman.gl.ShaderProgram
+import com.marcowong.motoman.model.ModelData
 import com.marcowong.motoman.model.ObjLoader
 import com.marcowong.motoman.model.TextureCache
 import com.marcowong.motoman.track.math.Matrix4
@@ -17,6 +18,23 @@ import kotlin.math.abs
 import com.marcowong.motoman.audio.Audio
 import com.marcowong.motoman.audio.Haptics
 import com.marcowong.motoman.audio.MotorcycleSFX
+
+/**
+ * Attaches each sub-mesh's diffuse texture from its material name.
+ *
+ * The port's `ObjLoader` runs in commonMain and cannot create GL textures, so — unlike the
+ * original engine, whose `loadObj(..., true)` resolved them inline — every model must have its
+ * textures resolved after loading. Every other scene object (Tile, SceneTrack, BackgroundObjs,
+ * Rider, SkyBox) does this; the motorcycle did not, so its shadow quad had no texture and
+ * sampled whatever was last bound (the bike's own texture), drawing a coloured pad instead of
+ * a soft shadow.
+ */
+private fun resolveModelTextures(model: ModelData, textures: TextureCache) {
+    for (sub in model.subMeshes) {
+        val name = sub.material?.diffuseTextureName ?: continue
+        sub.material!!.diffuseTexture = textures.get(name)
+    }
+}
 
 open class Motorcycle(
     val gl: Gl,
@@ -75,6 +93,7 @@ open class Motorcycle(
     init {
         val objLoader = ObjLoader(assets)
         val shadowModel = objLoader.loadObj("data/bikeShadow.obj", true) ?: error("Failed to load bikeShadow.obj")
+        resolveModelTextures(shadowModel, textures)
         shadowModelMeshContext = batch.add(shadowModel)
     }
     
@@ -217,12 +236,15 @@ class MainMotorcycle(
     init {
         val objLoader = ObjLoader(assets)
         val mainBodyModel = objLoader.loadObj("data/bikeBody.obj", true) ?: error("Failed to load bikeBody.obj")
+        resolveModelTextures(mainBodyModel, textures)
         bodyModelMeshContext = batch.add(mainBodyModel)
-        
+
         val mainFrontWheelModel = objLoader.loadObj("data/bikeFrontWheel.obj", true) ?: error("Failed to load bikeFrontWheel.obj")
+        resolveModelTextures(mainFrontWheelModel, textures)
         frontWheelModelMeshContext = batch.add(mainFrontWheelModel)
-        
+
         val mainRearWheelModel = objLoader.loadObj("data/bikeRearWheel.obj", true) ?: error("Failed to load bikeRearWheel.obj")
+        resolveModelTextures(mainRearWheelModel, textures)
         rearWheelModelMeshContext = batch.add(mainRearWheelModel)
         
         val zAdjust = 0.95f
@@ -232,9 +254,17 @@ class MainMotorcycle(
         ridePos.translate(0f, zAdjust + 1.6f, -1f)
         backfirePos.set(0f, zAdjust + 2.14038f, -2.74571f)
         logic.massCenterHeight = zAdjust + 1.75f // height of oil tank
-        logic.leanAngleMaxWhenRunning = 55f
         leanAngleMaxWhenRunningRenderHeightShift = 0.07f
         leanAngleMaxWhenCrashedRenderHeightShift = 0.7f
-        logic.leanAngleSafe = 30f
+        // Gentle, forgiving ride (original was 55 / 30 and 90 / 90 / 25):
+        //  - lean can go much further before it over-leans into a crash,
+        //  - a bigger fully-safe band where traction stays at full,
+        //  - turn-in and lean build slowly, and the self-reinforcing "fall over" force is
+        //    small, so a held turn traces a wide, controllable arc.
+        logic.leanAngleMaxWhenRunning = 70f
+        logic.leanAngleSafe = 40f
+        logic.counterSteeringLeanInc = 30f
+        logic.leanAnglePressure = 35f
+        logic.gravityForceWhenRunning = 7f
     }
 }
