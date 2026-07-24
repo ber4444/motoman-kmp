@@ -110,10 +110,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) {
         event ?: return
         if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-            val y = event.values[1] // Tilt along Y axis (landscape)
-            // Normalize tilt roughly
-            inputState.steer = (y / 5f).coerceIn(-1f, 1f)
-            inputState.throttle = 1f // Auto-throttle for now? 
+            // Sensor values stay in the device's natural (portrait) frame even though the
+            // activity is locked to landscape, so the left/right lean axis is Y. Negated:
+            // without it, tilting the phone right steered the bike left.
+            val y = event.values[1]
+            inputState.steer = (-y / 5f).coerceIn(-1f, 1f)
+            inputState.throttle = 1f // Auto-throttle for now?
         }
     }
 
