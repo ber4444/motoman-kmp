@@ -23,3 +23,8 @@ fun MainViewController(gameViewController: UIViewController, host: IosGameHost):
         MotomanHUD(state)
     }
 }
+
+fun HudViewController(host: IosGameHost): UIViewController = ComposeUIViewController {
+    val state by host.app.gameStateFlow.state.collectAsState()
+    MotomanHUD(state)
+}

@@ -1,7 +1,7 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
 package com.marcowong.motoman.gl
 
-import platform.gles2.*
-import platform.glescommon.*
+import mwgl.*
 import kotlinx.cinterop.*
 
 actual fun createPlatformGl(): Gl = IosGl()
@@ -10,300 +10,275 @@ class IosGl : Gl {
     override var defaultFramebuffer: Int = 0
 
     override fun glViewport(x: Int, y: Int, width: Int, height: Int) {
-        platform.gles2.glViewport(x, y, width, height)
+        mwgl_viewport(x, y, width, height)
     }
 
     override fun glClear(mask: Int) {
-        platform.gles2.glClear(mask.convert())
+        mwgl_clear(mask)
     }
 
     override fun glClearColor(red: Float, green: Float, blue: Float, alpha: Float) {
-        platform.gles2.glClearColor(red, green, blue, alpha)
+        mwgl_clear_color(red, green, blue, alpha)
     }
 
     override fun glEnable(cap: Int) {
-        platform.gles2.glEnable(cap.convert())
+        mwgl_enable(cap)
     }
 
     override fun glDisable(cap: Int) {
-        platform.gles2.glDisable(cap.convert())
+        mwgl_disable(cap)
     }
 
     override fun glDepthFunc(func: Int) {
-        platform.gles2.glDepthFunc(func.convert())
+        mwgl_depth_func(func)
     }
 
     override fun glDepthMask(flag: Boolean) {
-        platform.gles2.glDepthMask(if (flag) 1u else 0u)
+        mwgl_depth_mask(if (flag) 1 else 0)
     }
 
     override fun glCullFace(mode: Int) {
-        platform.gles2.glCullFace(mode.convert())
+        mwgl_cull_face(mode)
     }
 
     override fun glFrontFace(mode: Int) {
-        platform.gles2.glFrontFace(mode.convert())
+        mwgl_front_face(mode)
     }
 
     override fun glBlendFunc(sfactor: Int, dfactor: Int) {
-        platform.gles2.glBlendFunc(sfactor.convert(), dfactor.convert())
+        mwgl_blend_func(sfactor, dfactor)
     }
 
-    override fun glGenBuffer(): Int = memScoped {
-        val id = alloc<GLuintVar>()
-        platform.gles2.glGenBuffers(1, id.ptr)
-        id.value.toInt()
-    }
+    override fun glGenBuffer(): Int = mwgl_create_buffer()
 
     override fun glBindBuffer(target: Int, buffer: Int) {
-        platform.gles2.glBindBuffer(target.convert(), buffer.convert())
+        mwgl_bind_buffer(target, buffer)
     }
 
     override fun glBufferData(target: Int, data: FloatArray, usage: Int) {
         data.usePinned { pinned ->
-            platform.gles2.glBufferData(target.convert(), (data.size * 4).convert(), pinned.addressOf(0), usage.convert())
+            mwgl_buffer_data(target, pinned.addressOf(0), data.size, usage)
         }
     }
 
     override fun glBufferData(target: Int, data: ShortArray, usage: Int) {
         data.usePinned { pinned ->
-            platform.gles2.glBufferData(target.convert(), (data.size * 2).convert(), pinned.addressOf(0), usage.convert())
+            mwgl_buffer_data_short(target, pinned.addressOf(0), data.size, usage)
         }
     }
 
-    override fun glDeleteBuffer(buffer: Int) = memScoped {
-        val id = alloc<GLuintVar>()
-        id.value = buffer.convert()
-        platform.gles2.glDeleteBuffers(1, id.ptr)
+    override fun glDeleteBuffer(buffer: Int) {
+        mwgl_delete_buffer(buffer)
     }
 
     override fun glEnableVertexAttribArray(index: Int) {
-        platform.gles2.glEnableVertexAttribArray(index.convert())
+        mwgl_enable_vertex_attrib_array(index)
     }
 
     override fun glDisableVertexAttribArray(index: Int) {
-        platform.gles2.glDisableVertexAttribArray(index.convert())
+        mwgl_disable_vertex_attrib_array(index)
     }
 
     override fun glVertexAttribPointer(index: Int, size: Int, type: Int, normalized: Boolean, strideBytes: Int, offsetBytes: Int) {
-        platform.gles2.glVertexAttribPointer(index.convert(), size.convert(), type.convert(), if (normalized) 1u else 0u, strideBytes.convert(), offsetBytes.toLong().toCPointer<CPointed>())
+        mwgl_vertex_attrib_pointer(index, size, type, if (normalized) 1 else 0, strideBytes, offsetBytes)
     }
 
     override fun glDrawArrays(mode: Int, first: Int, count: Int) {
-        platform.gles2.glDrawArrays(mode.convert(), first.convert(), count.convert())
+        mwgl_draw_arrays(mode, first, count)
     }
 
     override fun glDrawElements(mode: Int, count: Int, type: Int, offsetBytes: Int) {
-        platform.gles2.glDrawElements(mode.convert(), count.convert(), type.convert(), offsetBytes.toLong().toCPointer<CPointed>())
+        mwgl_draw_elements(mode, count, type, offsetBytes)
     }
 
     override fun glCreateShader(type: Int): Int {
-        return platform.gles2.glCreateShader(type.convert()).toInt()
+        return mwgl_create_shader(type)
     }
 
-    override fun glShaderSource(shader: Int, source: String) = memScoped {
-        val arr = allocArrayOf(source.cstr.ptr)
-        platform.gles2.glShaderSource(shader.convert(), 1, arr, null)
+    override fun glShaderSource(shader: Int, source: String) {
+        mwgl_shader_source(shader, source)
     }
 
     override fun glCompileShader(shader: Int) {
-        platform.gles2.glCompileShader(shader.convert())
+        mwgl_compile_shader(shader)
     }
 
-    override fun glGetShaderCompileStatus(shader: Int): Boolean = memScoped {
-        val status = alloc<GLintVar>()
-        platform.gles2.glGetShaderiv(shader.convert(), GL_COMPILE_STATUS.convert(), status.ptr)
-        status.value != 0
+    override fun glGetShaderCompileStatus(shader: Int): Boolean {
+        return mwgl_get_shader_compile_status(shader) != 0
     }
 
-    override fun glGetShaderInfoLog(shader: Int): String = memScoped {
-        val len = alloc<GLintVar>()
-        platform.gles2.glGetShaderiv(shader.convert(), GL_INFO_LOG_LENGTH.convert(), len.ptr)
-        if (len.value <= 0) return ""
-        val log = allocArray<ByteVar>(len.value)
-        platform.gles2.glGetShaderInfoLog(shader.convert(), len.value, null, log)
-        log.toKString()
+    override fun glGetShaderInfoLog(shader: Int): String {
+        val bufSize = 2048
+        val log = ByteArray(bufSize)
+        log.usePinned { pinned ->
+            mwgl_get_shader_info_log(shader, pinned.addressOf(0), bufSize)
+        }
+        return log.toKString()
     }
 
     override fun glDeleteShader(shader: Int) {
-        platform.gles2.glDeleteShader(shader.convert())
+        mwgl_delete_shader(shader)
     }
 
     override fun glCreateProgram(): Int {
-        return platform.gles2.glCreateProgram().toInt()
+        return mwgl_create_program_id()
     }
 
     override fun glAttachShader(program: Int, shader: Int) {
-        platform.gles2.glAttachShader(program.convert(), shader.convert())
+        mwgl_attach_shader(program, shader)
     }
 
     override fun glBindAttribLocation(program: Int, index: Int, name: String) {
-        platform.gles2.glBindAttribLocation(program.convert(), index.convert(), name)
+        mwgl_bind_attrib_location(program, index, name)
     }
 
     override fun glLinkProgram(program: Int) {
-        platform.gles2.glLinkProgram(program.convert())
+        mwgl_link_program(program)
     }
 
-    override fun glGetProgramLinkStatus(program: Int): Boolean = memScoped {
-        val status = alloc<GLintVar>()
-        platform.gles2.glGetProgramiv(program.convert(), GL_LINK_STATUS.convert(), status.ptr)
-        status.value != 0
+    override fun glGetProgramLinkStatus(program: Int): Boolean {
+        return mwgl_get_program_link_status(program) != 0
     }
 
-    override fun glGetProgramInfoLog(program: Int): String = memScoped {
-        val len = alloc<GLintVar>()
-        platform.gles2.glGetProgramiv(program.convert(), GL_INFO_LOG_LENGTH.convert(), len.ptr)
-        if (len.value <= 0) return ""
-        val log = allocArray<ByteVar>(len.value)
-        platform.gles2.glGetProgramInfoLog(program.convert(), len.value, null, log)
-        log.toKString()
+    override fun glGetProgramInfoLog(program: Int): String {
+        val bufSize = 2048
+        val log = ByteArray(bufSize)
+        log.usePinned { pinned ->
+            mwgl_get_program_info_log(program, pinned.addressOf(0), bufSize)
+        }
+        return log.toKString()
     }
 
     override fun glUseProgram(program: Int) {
-        platform.gles2.glUseProgram(program.convert())
+        mwgl_use_program(program)
     }
 
     override fun glDeleteProgram(program: Int) {
-        platform.gles2.glDeleteProgram(program.convert())
+        mwgl_delete_program(program)
     }
 
     override fun glGetAttribLocation(program: Int, name: String): Int {
-        return platform.gles2.glGetAttribLocation(program.convert(), name)
+        return mwgl_attrib_location(program, name)
     }
 
     override fun glGetUniformLocation(program: Int, name: String): Int {
-        return platform.gles2.glGetUniformLocation(program.convert(), name)
+        return mwgl_uniform_location(program, name)
     }
 
     override fun glUniform1i(location: Int, x: Int) {
-        platform.gles2.glUniform1i(location.convert(), x)
+        mwgl_uniform1i(location, x)
     }
 
     override fun glUniform1f(location: Int, x: Float) {
-        platform.gles2.glUniform1f(location.convert(), x)
+        mwgl_uniform1f(location, x)
     }
 
     override fun glUniform2f(location: Int, x: Float, y: Float) {
-        platform.gles2.glUniform2f(location.convert(), x, y)
+        mwgl_uniform2f(location, x, y)
     }
 
     override fun glUniform3f(location: Int, x: Float, y: Float, z: Float) {
-        platform.gles2.glUniform3f(location.convert(), x, y, z)
+        mwgl_uniform3f(location, x, y, z)
     }
 
     override fun glUniform4f(location: Int, x: Float, y: Float, z: Float, w: Float) {
-        platform.gles2.glUniform4f(location.convert(), x, y, z, w)
+        mwgl_uniform4f(location, x, y, z, w)
     }
 
     override fun glUniformMatrix4fv(location: Int, transpose: Boolean, value: FloatArray) {
         value.usePinned { pinned ->
-            platform.gles2.glUniformMatrix4fv(location.convert(), 1, if (transpose) 1u else 0u, pinned.addressOf(0))
+            mwgl_uniform_matrix4fv(location, 1, if (transpose) 1 else 0, pinned.addressOf(0))
         }
     }
 
     override fun glActiveTexture(texture: Int) {
-        platform.gles2.glActiveTexture(texture.convert())
+        mwgl_active_texture(texture)
     }
 
-    override fun glGenTexture(): Int = memScoped {
-        val id = alloc<GLuintVar>()
-        platform.gles2.glGenTextures(1, id.ptr)
-        id.value.toInt()
+    override fun glGenTexture(): Int {
+        return mwgl_create_texture()
     }
 
     override fun glBindTexture(target: Int, texture: Int) {
-        platform.gles2.glBindTexture(target.convert(), texture.convert())
+        mwgl_bind_texture(target, texture)
     }
 
     override fun glTexParameteri(target: Int, pname: Int, param: Int) {
-        platform.gles2.glTexParameteri(target.convert(), pname.convert(), param.convert())
+        mwgl_tex_parameteri(target, pname, param)
     }
 
     override fun glTexImage2D(target: Int, level: Int, internalformat: Int, width: Int, height: Int, border: Int, format: Int, type: Int, pixels: ByteArray?) {
         if (pixels == null) {
-            platform.gles2.glTexImage2D(target.convert(), level.convert(), internalformat.convert(), width.convert(), height.convert(), border.convert(), format.convert(), type.convert(), null)
+            mwgl_tex_image_2d(target, level, internalformat, width, height, border, format, type, null)
         } else {
             pixels.usePinned { pinned ->
-                platform.gles2.glTexImage2D(target.convert(), level.convert(), internalformat.convert(), width.convert(), height.convert(), border.convert(), format.convert(), type.convert(), pinned.addressOf(0))
+                mwgl_tex_image_2d(target, level, internalformat, width, height, border, format, type, pinned.addressOf(0))
             }
         }
     }
 
     override fun glGenerateMipmap(target: Int) {
-        platform.gles2.glGenerateMipmap(target.convert())
+        mwgl_generate_mipmap(target)
     }
 
-    override fun glDeleteTexture(texture: Int) = memScoped {
-        val id = alloc<GLuintVar>()
-        id.value = texture.convert()
-        platform.gles2.glDeleteTextures(1, id.ptr)
+    override fun glDeleteTexture(texture: Int) {
+        mwgl_delete_texture(texture)
     }
 
-    override fun glGenFramebuffer(): Int = memScoped {
-        val id = alloc<GLuintVar>()
-        platform.gles2.glGenFramebuffers(1, id.ptr)
-        id.value.toInt()
+    override fun glGenFramebuffer(): Int {
+        return mwgl_create_framebuffer()
     }
 
     override fun glBindFramebuffer(target: Int, framebuffer: Int) {
-        platform.gles2.glBindFramebuffer(target.convert(), framebuffer.convert())
+        mwgl_bind_framebuffer(target, framebuffer)
     }
 
-    override fun glDeleteFramebuffer(framebuffer: Int) = memScoped {
-        val id = alloc<GLuintVar>()
-        id.value = framebuffer.convert()
-        platform.gles2.glDeleteFramebuffers(1, id.ptr)
+    override fun glDeleteFramebuffer(framebuffer: Int) {
+        mwgl_delete_framebuffer(framebuffer)
     }
 
     override fun glFramebufferTexture2D(target: Int, attachment: Int, textarget: Int, texture: Int, level: Int) {
-        platform.gles2.glFramebufferTexture2D(target.convert(), attachment.convert(), textarget.convert(), texture.convert(), level.convert())
+        mwgl_framebuffer_texture_2d(target, attachment, textarget, texture, level)
     }
 
     override fun glCheckFramebufferStatus(target: Int): Int {
-        return platform.gles2.glCheckFramebufferStatus(target.convert()).toInt()
+        return mwgl_check_framebuffer_status(target)
     }
 
-    override fun glGenRenderbuffer(): Int = memScoped {
-        val id = alloc<GLuintVar>()
-        platform.gles2.glGenRenderbuffers(1, id.ptr)
-        id.value.toInt()
+    override fun glGenRenderbuffer(): Int {
+        return mwgl_create_renderbuffer()
     }
 
     override fun glBindRenderbuffer(target: Int, renderbuffer: Int) {
-        platform.gles2.glBindRenderbuffer(target.convert(), renderbuffer.convert())
+        mwgl_bind_renderbuffer(target, renderbuffer)
     }
 
-    override fun glDeleteRenderbuffer(renderbuffer: Int) = memScoped {
-        val id = alloc<GLuintVar>()
-        id.value = renderbuffer.convert()
-        platform.gles2.glDeleteRenderbuffers(1, id.ptr)
+    override fun glDeleteRenderbuffer(renderbuffer: Int) {
+        mwgl_delete_renderbuffer(renderbuffer)
     }
 
     override fun glRenderbufferStorage(target: Int, internalformat: Int, width: Int, height: Int) {
-        platform.gles2.glRenderbufferStorage(target.convert(), internalformat.convert(), width.convert(), height.convert())
+        mwgl_renderbuffer_storage(target, internalformat, width, height)
     }
 
     override fun glFramebufferRenderbuffer(target: Int, attachment: Int, renderbuffertarget: Int, renderbuffer: Int) {
-        platform.gles2.glFramebufferRenderbuffer(target.convert(), attachment.convert(), renderbuffertarget.convert(), renderbuffer.convert())
+        mwgl_framebuffer_renderbuffer(target, attachment, renderbuffertarget, renderbuffer)
     }
 
     override fun glReadPixels(x: Int, y: Int, width: Int, height: Int, format: Int, type: Int): ByteArray {
-        // According to Step 2, glReadPixels returns a ByteArray: allocate width * height * bytesPerPixel
         val bpp = 4 // Assuming RGBA
         val arr = ByteArray(width * height * bpp)
         arr.usePinned { pinned ->
-            platform.gles2.glReadPixels(x.convert(), y.convert(), width.convert(), height.convert(), format.convert(), type.convert(), pinned.addressOf(0))
+            mwgl_read_pixels(x, y, width, height, format, type, pinned.addressOf(0))
         }
         return arr
     }
 
     override fun glGetError(): Int {
-        return platform.gles2.glGetError().toInt()
+        return mwgl_get_error()
     }
 
     override fun glGetString(name: Int): String? {
-        val ptr = platform.gles2.glGetString(name.convert())
-        return ptr?.reinterpret<ByteVar>()?.toKString()
+        return mwgl_get_string(name)?.toKString()
     }
 }

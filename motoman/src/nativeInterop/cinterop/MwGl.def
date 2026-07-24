@@ -1,0 +1,78 @@
+package = mwgl
+headers = MwGl.h
+headerFilter = MwGl.h
+linkerOpts = -framework OpenGLES
+
+---
+
+#include "MwGl.h"
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int mwgl_create_shader(int type) { return glCreateShader(type); }
+void mwgl_shader_source(int shader, const char* source) { glShaderSource(shader, 1, &source, NULL); }
+void mwgl_compile_shader(int shader) { glCompileShader(shader); }
+int mwgl_get_shader_compile_status(int shader) { GLint ok; glGetShaderiv(shader, GL_COMPILE_STATUS, &ok); return ok; }
+void mwgl_get_shader_info_log(int shader, char* log, int bufSize) { GLsizei len=0; glGetShaderInfoLog(shader, bufSize, &len, log); }
+void mwgl_delete_shader(int shader) { glDeleteShader(shader); }
+
+int mwgl_create_program_id(void) { return glCreateProgram(); }
+void mwgl_attach_shader(int program, int shader) { glAttachShader(program, shader); }
+void mwgl_bind_attrib_location(int program, int index, const char* name) { glBindAttribLocation(program, index, name); }
+void mwgl_link_program(int program) { glLinkProgram(program); }
+int mwgl_get_program_link_status(int program) { GLint ok; glGetProgramiv(program, GL_LINK_STATUS, &ok); return ok; }
+void mwgl_get_program_info_log(int program, char* log, int bufSize) { GLsizei len=0; glGetProgramInfoLog(program, bufSize, &len, log); }
+void mwgl_delete_program(int program) { glDeleteProgram(program); }
+
+void mwgl_use_program(int program) { glUseProgram(program); }
+int mwgl_attrib_location(int program, const char* name) { return glGetAttribLocation(program, name); }
+int mwgl_uniform_location(int program, const char* name) { return glGetUniformLocation(program, name); }
+void mwgl_uniform_matrix4fv(int loc, int count, int transpose, const float* value) { glUniformMatrix4fv(loc, count, transpose, value); }
+void mwgl_uniform1i(int loc, int v) { glUniform1i(loc, v); }
+void mwgl_uniform1f(int loc, float v) { glUniform1f(loc, v); }
+void mwgl_uniform2f(int loc, float x, float y) { glUniform2f(loc, x, y); }
+void mwgl_uniform3f(int loc, float x, float y, float z) { glUniform3f(loc, x, y, z); }
+void mwgl_uniform4f(int loc, float x, float y, float z, float w) { glUniform4f(loc, x, y, z, w); }
+void mwgl_uniform3fv(int loc, const float* v) { glUniform3fv(loc, 1, v); }
+void mwgl_uniform4fv(int loc, const float* v) { glUniform4fv(loc, 1, v); }
+int mwgl_create_buffer(void) { GLuint b; glGenBuffers(1, &b); return b; }
+void mwgl_buffer_data(int target, const float* data, int count, int usage) { glBufferData(target, count * sizeof(float), data, usage); }
+void mwgl_buffer_data_short(int target, const short* data, int count, int usage) { glBufferData(target, count * sizeof(short), data, usage); }
+void mwgl_bind_buffer(int target, int buffer) { glBindBuffer(target, buffer); }
+void mwgl_delete_buffer(int buffer) { GLuint b = buffer; glDeleteBuffers(1, &b); }
+void mwgl_vertex_attrib_pointer(int index, int size, int type, int normalized, int stride, int offset) { glVertexAttribPointer(index, size, type, normalized, stride, (const void*)(long)offset); }
+void mwgl_enable_vertex_attrib_array(int index) { glEnableVertexAttribArray(index); }
+void mwgl_disable_vertex_attrib_array(int index) { glDisableVertexAttribArray(index); }
+int mwgl_create_texture(void) { GLuint t; glGenTextures(1, &t); return t; }
+void mwgl_bind_texture(int target, int texture) { glBindTexture(target, texture); }
+void mwgl_active_texture(int unit) { glActiveTexture(unit); }
+void mwgl_tex_image_2d(int target, int level, int internalFormat, int w, int h, int border, int format, int type, const void* data) { glTexImage2D(target, level, internalFormat, w, h, border, format, type, data); }
+void mwgl_tex_parameteri(int target, int pname, int value) { glTexParameteri(target, pname, value); }
+void mwgl_generate_mipmap(int target) { glGenerateMipmap(target); }
+void mwgl_delete_texture(int texture) { GLuint t = texture; glDeleteTextures(1, &t); }
+int mwgl_create_framebuffer(void) { GLuint f; glGenFramebuffers(1, &f); return f; }
+void mwgl_bind_framebuffer(int target, int framebuffer) { glBindFramebuffer(target, framebuffer); }
+void mwgl_delete_framebuffer(int framebuffer) { GLuint f = framebuffer; glDeleteFramebuffers(1, &f); }
+void mwgl_framebuffer_texture_2d(int target, int attachment, int textarget, int texture, int level) { glFramebufferTexture2D(target, attachment, textarget, texture, level); }
+int mwgl_check_framebuffer_status(int target) { return glCheckFramebufferStatus(target); }
+int mwgl_create_renderbuffer(void) { GLuint r; glGenRenderbuffers(1, &r); return r; }
+void mwgl_bind_renderbuffer(int target, int renderbuffer) { glBindRenderbuffer(target, renderbuffer); }
+void mwgl_delete_renderbuffer(int renderbuffer) { GLuint r = renderbuffer; glDeleteRenderbuffers(1, &r); }
+void mwgl_renderbuffer_storage(int target, int internalformat, int width, int height) { glRenderbufferStorage(target, internalformat, width, height); }
+void mwgl_framebuffer_renderbuffer(int target, int attachment, int renderbuffertarget, int renderbuffer) { glFramebufferRenderbuffer(target, attachment, renderbuffertarget, renderbuffer); }
+void mwgl_read_pixels(int x, int y, int width, int height, int format, int type, void* pixels) { glReadPixels(x, y, width, height, format, type, pixels); }
+void mwgl_viewport(int x, int y, int w, int h) { glViewport(x, y, w, h); }
+void mwgl_clear_color(float r, float g, float b, float a) { glClearColor(r, g, b, a); }
+void mwgl_clear(int mask) { glClear(mask); }
+void mwgl_enable(int cap) { glEnable(cap); }
+void mwgl_disable(int cap) { glDisable(cap); }
+void mwgl_depth_func(int func) { glDepthFunc(func); }
+void mwgl_depth_mask(int flag) { glDepthMask(flag); }
+void mwgl_cull_face(int mode) { glCullFace(mode); }
+void mwgl_front_face(int mode) { glFrontFace(mode); }
+void mwgl_blend_func(int sfactor, int dfactor) { glBlendFunc(sfactor, dfactor); }
+void mwgl_draw_arrays(int mode, int first, int count) { glDrawArrays(mode, first, count); }
+void mwgl_draw_elements(int mode, int count, int type, int offset) { glDrawElements(mode, count, type, (const void*)(long)offset); }
+int mwgl_get_error(void) { return glGetError(); }
+const char* mwgl_get_string(int name) { return (const char*)glGetString(name); }

@@ -43,7 +43,14 @@ kotlin {
         }
     }
 
-    listOf(iosX64(), iosArm64(), iosSimulatorArm64())
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
+        it.compilations.getByName("main").cinterops {
+            create("mwgl") {
+                defFile(project.file("src/nativeInterop/cinterop/MwGl.def"))
+                compilerOpts("-I${project.file("src/nativeInterop/cinterop")}")
+            }
+        }
+    }
 
     sourceSets {
         val commonMain by getting {

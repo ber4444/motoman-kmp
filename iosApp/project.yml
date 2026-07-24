@@ -1,11 +1,16 @@
 name: iosApp
 options:
   bundleIdPrefix: com.marcowong.motoman
+packages:
+  MetalANGLE:
+    path: ../third_party/MetalANGLE
 targets:
   iosApp:
     type: application
     platform: iOS
     deploymentTarget: "15.0"
+    dependencies:
+      - package: MetalANGLE
     sources:
       - path: iosApp
       - path: ../motoman-android/assets/data
