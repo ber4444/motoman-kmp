@@ -5,6 +5,7 @@ package com.marcowong.motoman.gl
  * layers above actually issue, with no GPU or context involved.
  */
 class FakeGl : Gl {
+    override val defaultFramebuffer: Int = 0
     val calls = mutableListOf<String>()
 
     private var nextBuffer = 1
