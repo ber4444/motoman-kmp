@@ -2,22 +2,50 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.compose)
 }
 
 kotlin {
     androidTarget {
         publishLibraryVariants("release", "debug")
         compilations.all {
-            kotlinOptions {
-                jvmTarget = "1.8"
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+                }
             }
         }
     }
 
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
+        val metalAngleSlice = if (it.name == "iosArm64") {
+            "ios-arm64_armv7"
+        } else {
+            "ios-arm64_i386_x86_64-simulator"
+        }
+        val metalAngleFrameworkSearchPath = rootProject.file(
+            "third_party/MetalANGLE/MetalANGLE.xcframework/$metalAngleSlice"
+        ).absolutePath
+
+        it.binaries.framework {
+            baseName = "Motoman"
+            export(project(":motoman"))
+            linkerOpts("-F$metalAngleFrameworkSearchPath", "-framework", "MetalANGLE")
+        }
+    }
+
     sourceSets {
+        all {
+            languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi")
+            languageSettings.optIn("org.jetbrains.compose.ExperimentalComposeLibrary")
+            languageSettings.optIn("org.jetbrains.compose.ui.ExperimentalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.ExperimentalComposeUiApi")
+            languageSettings.optIn("androidx.compose.ui.window.ExperimentalComposeUiApi")
+            languageSettings.optIn("org.jetbrains.compose.ui.window.ExperimentalComposeUiApi")
+        }
         val commonMain by getting {
             dependencies {
-                implementation(project(":motoman"))
+                api(project(":motoman"))
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material)

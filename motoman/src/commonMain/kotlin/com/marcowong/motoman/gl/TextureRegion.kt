@@ -5,11 +5,11 @@ package com.marcowong.motoman.gl
  * Port of libGDX `TextureRegion` limited to what the engine needs.
  */
 class TextureRegion(
-    @JvmField val texture: Texture,
-    @JvmField var u: Float = 0f,
-    @JvmField var v: Float = 0f,
-    @JvmField var u2: Float = 1f,
-    @JvmField var v2: Float = 1f,
+    val texture: Texture,
+    var u: Float = 0f,
+    var v: Float = 0f,
+    var u2: Float = 1f,
+    var v2: Float = 1f,
 ) {
     /** Builds a region from pixel coordinates within [texture]. */
     constructor(texture: Texture, x: Int, y: Int, width: Int, height: Int) : this(

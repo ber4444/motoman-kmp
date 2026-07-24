@@ -27,16 +27,33 @@ actual fun decodePixmap(bytes: ByteArray): Pixmap {
         ?: error("stb failed to decode image: ${STBImage.stbi_failure_reason()}")
 
     try {
-        val w = width.get(0)
-        val h = height.get(0)
-        val out = ByteArray(w * h * 4)
-        // Copy via a duplicate: stbi_image_free frees memAddress(buffer), which is the
-        // address at the buffer's *current position*. Reading from `decoded` directly
-        // would leave position at the end and free base+size — a pointer stb never
-        // allocated. glibc aborts on that ("double free or corruption"); macOS does not.
-        decoded.duplicate().get(out)
-        return Pixmap(w, h, PixmapFormat.RGBA8888, out)
+        var w = width.get(0)
+        var h = height.get(0)
+        
+        val potW = nextPowerOfTwo(w)
+        val potH = nextPowerOfTwo(h)
+        
+        val out = ByteArray(potW * potH * 4)
+        if (w != potW || h != potH) {
+            val outBuffer = BufferUtils.createByteBuffer(potW * potH * 4)
+            org.lwjgl.stb.STBImageResize.stbir_resize_uint8(decoded, w, h, 0, outBuffer, potW, potH, 0, 4)
+            outBuffer.get(out)
+        } else {
+            decoded.duplicate().get(out)
+        }
+        return Pixmap(potW, potH, PixmapFormat.RGBA8888, out)
     } finally {
         STBImage.stbi_image_free(decoded)
     }
+}
+
+private fun nextPowerOfTwo(value: Int): Int {
+    if (value == 0) return 1
+    var v = value - 1
+    v = v or (v ushr 1)
+    v = v or (v ushr 2)
+    v = v or (v ushr 4)
+    v = v or (v ushr 8)
+    v = v or (v ushr 16)
+    return v + 1
 }

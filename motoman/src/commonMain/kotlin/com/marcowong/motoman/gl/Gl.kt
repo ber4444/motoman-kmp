@@ -13,6 +13,9 @@ package com.marcowong.motoman.gl
  * marshals arrays into whatever native buffer its GL binding requires.
  */
 interface Gl {
+    /** The default framebuffer to bind when rendering to the screen (0 on Android/Desktop, custom FBO on iOS GLKit). */
+    val defaultFramebuffer: Int
+
     // ---- Whole-frame state ----
     fun glViewport(x: Int, y: Int, width: Int, height: Int)
     fun glClear(mask: Int)

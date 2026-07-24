@@ -8,18 +8,18 @@ import kotlin.math.atan2
 import kotlin.math.max
 
 class TrackGenerator {
-    @JvmField var random: IRandom = BasicRandom(100000)
-    @JvmField var turnAngleSmoothFactor = 2
-    @JvmField var turnAngleZeroFactor = 0.2f
-    @JvmField var sharpAngleReference = 75f
-    @JvmField var trackLen = 100f
-    @JvmField var segLen = 1f
-    @JvmField var segWidth = 1f
-    @JvmField var segPad = 0.5f
+    var random: IRandom = BasicRandom(100000)
+    var turnAngleSmoothFactor = 2
+    var turnAngleZeroFactor = 0.2f
+    var sharpAngleReference = 75f
+    var trackLen = 100f
+    var segLen = 1f
+    var segWidth = 1f
+    var segPad = 0.5f
 
     private var maxProgress = 0f
     private var tTLen = 0f
-    @JvmField var trackDataRandomSeed: Long = 100000
+    var trackDataRandomSeed: Long = 100000
 
     private class UpdateTurnAngleContext {
         var retryCount = 0

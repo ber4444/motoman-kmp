@@ -18,12 +18,12 @@ object VertexUsage {
  * name it binds to, and its byte [offset] within a vertex (assigned by [VertexAttributes]).
  */
 class VertexAttribute(
-    @JvmField val usage: Int,
-    @JvmField val numComponents: Int,
-    @JvmField val alias: String,
+    val usage: Int,
+    val numComponents: Int,
+    val alias: String,
 ) {
     /** Byte offset into the vertex; set when this attribute joins a [VertexAttributes] set. */
-    @JvmField var offset: Int = 0
+    var offset: Int = 0
 
     /** All engine attributes are float-typed. */
     val sizeInBytes: Int get() = numComponents * 4
@@ -43,7 +43,7 @@ class VertexAttributes(vararg attributes: VertexAttribute) {
     private val attributes: Array<out VertexAttribute> = attributes
 
     /** Stride in bytes between consecutive vertices. */
-    @JvmField val vertexSize: Int
+    val vertexSize: Int
 
     init {
         var offset = 0

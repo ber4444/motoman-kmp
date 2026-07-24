@@ -1,0 +1,5 @@
+framework module MetalANGLE {
+    umbrella header "MGLKit.h"
+    export *
+    module * { export * }
+}

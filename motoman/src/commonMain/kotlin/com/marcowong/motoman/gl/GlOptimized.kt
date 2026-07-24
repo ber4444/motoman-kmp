@@ -183,6 +183,8 @@ class GlOptimized(private val delegate: Gl) : Gl {
     }
 
     // ---- Straight pass-through (no state to elide for this engine's use) ----
+    override val defaultFramebuffer: Int
+        get() = delegate.defaultFramebuffer
     override fun glViewport(x: Int, y: Int, width: Int, height: Int) = delegate.glViewport(x, y, width, height)
     override fun glClear(mask: Int) = delegate.glClear(mask)
     override fun glDepthFunc(func: Int) = delegate.glDepthFunc(func)

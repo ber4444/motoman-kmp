@@ -5,21 +5,21 @@ package com.marcowong.motoman.track.math
  * and frustum. Port of libGDX `Camera`, limited to what the engine's `MotomanCamera` uses.
  */
 abstract class Camera {
-    @JvmField val position = Vector3()
-    @JvmField val direction = Vector3(0f, 0f, -1f)
-    @JvmField val up = Vector3(0f, 1f, 0f)
+    val position = Vector3()
+    val direction = Vector3(0f, 0f, -1f)
+    val up = Vector3(0f, 1f, 0f)
 
-    @JvmField val projection = Matrix4()
-    @JvmField val view = Matrix4()
-    @JvmField val combined = Matrix4()
-    @JvmField val invProjectionView = Matrix4()
+    val projection = Matrix4()
+    val view = Matrix4()
+    val combined = Matrix4()
+    val invProjectionView = Matrix4()
 
-    @JvmField var near = 1f
-    @JvmField var far = 100f
-    @JvmField var viewportWidth = 0f
-    @JvmField var viewportHeight = 0f
+    var near = 1f
+    var far = 100f
+    var viewportWidth = 0f
+    var viewportHeight = 0f
 
-    @JvmField val frustum = Frustum()
+    val frustum = Frustum()
 
     private val tmpVec = Vector3()
 
@@ -50,7 +50,7 @@ abstract class Camera {
 
 /** Perspective camera, port of libGDX `PerspectiveCamera`. */
 open class PerspectiveCamera : Camera {
-    @JvmField var fieldOfView: Float = 67f
+    var fieldOfView: Float = 67f
 
     private val tmp = Vector3()
 

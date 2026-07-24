@@ -42,7 +42,7 @@ class FrameBuffer(
         val status = gl.glCheckFramebufferStatus(GL_FRAMEBUFFER)
         check(status == GL_FRAMEBUFFER_COMPLETE) { "Framebuffer incomplete: 0x${status.toString(16)}" }
 
-        gl.glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        gl.glBindFramebuffer(GL_FRAMEBUFFER, gl.defaultFramebuffer)
     }
 
     fun bind() {
@@ -51,7 +51,7 @@ class FrameBuffer(
     }
 
     fun end() {
-        gl.glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        gl.glBindFramebuffer(GL_FRAMEBUFFER, gl.defaultFramebuffer)
     }
 
     fun dispose() {
