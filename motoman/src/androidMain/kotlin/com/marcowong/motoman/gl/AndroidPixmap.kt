@@ -9,11 +9,20 @@ import android.graphics.BitmapFactory
 actual fun decodePixmap(bytes: ByteArray): Pixmap {
     require(bytes.isNotEmpty()) { "cannot decode an empty byte array" }
 
-    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    var bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
         ?: error("BitmapFactory failed to decode image")
     try {
-        val w = bitmap.width
-        val h = bitmap.height
+        var w = bitmap.width
+        var h = bitmap.height
+        val potW = nextPowerOfTwo(w)
+        val potH = nextPowerOfTwo(h)
+        if (w != potW || h != potH) {
+            val scaled = android.graphics.Bitmap.createScaledBitmap(bitmap, potW, potH, true)
+            bitmap.recycle()
+            bitmap = scaled
+            w = potW
+            h = potH
+        }
         val argb = IntArray(w * h)
         bitmap.getPixels(argb, 0, w, 0, 0, w, h)
 
@@ -31,4 +40,15 @@ actual fun decodePixmap(bytes: ByteArray): Pixmap {
     } finally {
         bitmap.recycle()
     }
+}
+
+private fun nextPowerOfTwo(value: Int): Int {
+    if (value == 0) return 1
+    var v = value - 1
+    v = v or (v ushr 1)
+    v = v or (v ushr 2)
+    v = v or (v ushr 4)
+    v = v or (v ushr 8)
+    v = v or (v ushr 16)
+    return v + 1
 }
