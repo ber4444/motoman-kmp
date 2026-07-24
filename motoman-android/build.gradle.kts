@@ -7,6 +7,7 @@ plugins {
 android {
     namespace = "com.marcowong.motoman"
     compileSdk = 34
+    ndkVersion = "26.1.10909125"
     
     defaultConfig {
         applicationId = "com.marcowong.motoman"
