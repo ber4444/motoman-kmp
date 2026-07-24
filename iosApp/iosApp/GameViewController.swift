@@ -160,7 +160,7 @@ class MilkyWayGLView: UIView {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = steeringTouch, touches.contains(touch) else { return }
 
-        let fullLock = max(bounds.width / 4, 1)
+        let fullLock = max(bounds.width / 5, 1)
         let dx = touch.location(in: self).x - steeringStartX
         let steer = Float(max(-1, min(1, dx / fullLock)))
         host?.setTilt(steer: steer)

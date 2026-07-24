@@ -28,10 +28,9 @@ class IosGameHost(private val debugGl: Boolean = false) {
     private var debug: GlDebug? = null
     private val input = InputState()
     
-    // Default throttle to 1.0f as per MainActivity, wait, let's just make it 1f here for now
-    // or let the Swift host provide it if needed. The plan says "hardcodes throttle = 1f".
+    // Default throttle to 0.7f as per Android's MAX_THROTTLE cap.
     init {
-        input.throttle = 1f
+        input.throttle = 0.7f
     }
 
     fun create(widthPx: Int, heightPx: Int) {

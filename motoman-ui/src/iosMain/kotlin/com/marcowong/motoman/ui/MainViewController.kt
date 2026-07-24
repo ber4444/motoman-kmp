@@ -30,7 +30,7 @@ fun MainViewController(gameViewController: UIViewController, host: IosGameHost):
         )
         Box(
             Modifier.fillMaxSize().pointerInput(Unit) {
-                val fullLockPx = size.width / 4f
+                val fullLockPx = size.width / 5f
                 awaitEachGesture {
                     val down = awaitFirstDown()
                     host.setSteer(0f)
