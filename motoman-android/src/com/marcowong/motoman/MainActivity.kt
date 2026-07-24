@@ -63,10 +63,12 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         val audio = AndroidAudio(this)
         val haptics = AndroidHaptics(this)
         val trackData = TrackGenerator().generate() ?: error("Failed to generate track data")
-        // Render toggles are overridable from the launch intent so parity work can bisect
-        // effects on-device without a rebuild, e.g.
+        // Default to the sharp, full-resolution preset (verified on the Fold 3's 2208x1768
+        // inner display). Every setting is overridable from the launch intent, so parity work
+        // can bisect effects — or drop back to the original half-res look — without a rebuild:
+        //   adb shell am start -n com.marcowong.motoman/.MainActivity --ef res 0.5 --ez texLinear false --ez fbLinear false
         //   adb shell am start -n com.marcowong.motoman/.MainActivity --ez bloom false
-        val d = RenderConfig.ORIGINAL
+        val d = RenderConfig.HIGH_QUALITY
         val config = RenderConfig(
             resolutionReduction = intent.getFloatExtra("res", d.resolutionReduction),
             modelTextureLinearFilter = intent.getBooleanExtra("texLinear", d.modelTextureLinearFilter),
