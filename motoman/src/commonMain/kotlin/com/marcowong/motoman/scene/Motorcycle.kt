@@ -254,15 +254,17 @@ class MainMotorcycle(
         ridePos.translate(0f, zAdjust + 1.6f, -1f)
         backfirePos.set(0f, zAdjust + 2.14038f, -2.74571f)
         logic.massCenterHeight = zAdjust + 1.75f // height of oil tank
-        logic.leanAngleMaxWhenRunning = 55f
         leanAngleMaxWhenRunningRenderHeightShift = 0.07f
         leanAngleMaxWhenCrashedRenderHeightShift = 0.7f
-        logic.leanAngleSafe = 30f
-        // Gentler than the original: turn-in and lean build about half as fast and the self-
-        // reinforcing "fall over" force is roughly halved, so a held turn traces a wider, more
-        // controllable arc instead of leaning over and crashing. (Original: 90 / 90 / 25.)
-        logic.counterSteeringLeanInc = 45f
-        logic.leanAnglePressure = 50f
-        logic.gravityForceWhenRunning = 12f
+        // Gentle, forgiving ride (original was 55 / 30 and 90 / 90 / 25):
+        //  - lean can go much further before it over-leans into a crash,
+        //  - a bigger fully-safe band where traction stays at full,
+        //  - turn-in and lean build slowly, and the self-reinforcing "fall over" force is
+        //    small, so a held turn traces a wide, controllable arc.
+        logic.leanAngleMaxWhenRunning = 70f
+        logic.leanAngleSafe = 40f
+        logic.counterSteeringLeanInc = 30f
+        logic.leanAnglePressure = 35f
+        logic.gravityForceWhenRunning = 7f
     }
 }
