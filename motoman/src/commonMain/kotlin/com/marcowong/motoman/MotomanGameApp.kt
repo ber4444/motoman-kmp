@@ -11,7 +11,6 @@ import com.marcowong.motoman.gl.GL_SRC_ALPHA
 import com.marcowong.motoman.gl.GL_ONE_MINUS_SRC_ALPHA
 import com.marcowong.motoman.gl.GL_DEPTH_BUFFER_BIT
 import com.marcowong.motoman.gl.GL_COLOR_BUFFER_BIT
-import com.marcowong.motoman.gl.GL_TEXTURE_2D
 import com.marcowong.motoman.gl.GL_CULL_FACE
 import com.marcowong.motoman.scene.*
 import com.marcowong.motoman.track.TrackData
@@ -89,6 +88,8 @@ class MotomanGameApp(
 
     private var standByPending = false
     private var standByTimeRemaining = 0f
+    private var crashedPending = false
+    private var crashedTimeRemaining = 0f
     
     private val useMotionBlur get() = config.motionBlur
     private val useBloom get() = config.bloom
@@ -333,16 +334,31 @@ class MotomanGameApp(
     }
 
     /**
-     * The subset of the original `MotomanGameScreen.runGameRules` that releases the bike from
-     * standby: the motorcycle starts standing still, and two seconds later `go()` lets the
-     * throttle reach the engine. Without this the bike is permanently immobile — every input
-     * is discarded by `Motorcycle.getEngineAndBrakeMeter` while `isStandBy` holds.
+     * The subset of the original `MotomanGameScreen.runGameRules` that keeps the bike rideable:
+     * the standby release and the crash respawn. Without the first, the bike is permanently
+     * immobile — every input is discarded by `Motorcycle.getEngineAndBrakeMeter` while
+     * `isStandBy` holds. Without the second, the first crash leaves the bike face-down forever.
      *
-     * Crash/respawn and finish handling from the original are still not ported.
+     * Finish/win handling from the original is still not ported.
      */
     private fun runStandByRule(delta: Float) {
         if (standByTimeRemaining > 0f) standByTimeRemaining -= delta
+        if (crashedTimeRemaining > 0f) crashedTimeRemaining -= delta
         val logic = motorcycle.logic
+
+        // Crash -> wait -> respawn at the track's spawn point, then stand by again.
+        if (!crashedPending && logic.state.isCrashed) {
+            crashedPending = true
+            crashedTimeRemaining = CRASH_SECONDS
+        }
+        if (crashedPending && crashedTimeRemaining <= 0f) {
+            crashedPending = false
+            logic.reset()
+            track.logic.getSpawnPosition(logic).`val`.copyInto(logic.state.pos.`val`, 0, 0, 16)
+            lastCameraViewReset = true
+        }
+
+        // Standby -> wait -> go.
         if (!standByPending && logic.state.isStandBy) {
             standByPending = true
             standByTimeRemaining = STANDBY_SECONDS
@@ -360,7 +376,8 @@ class MotomanGameApp(
         val bloomFBB = bloomFrameBufferB!!
         
         mainFB.bind()
-        gl.glEnable(GL_TEXTURE_2D)
+        // No glEnable(GL_TEXTURE_2D): it is fixed-function GL, implicit under GLES 2.0 where it
+        // raises GL_INVALID_ENUM. Desktop GL 2.1 compat tolerated it; Android reported it.
         gl.glEnable(GL_CULL_FACE)
         gl.glDisable(GL_DEPTH_TEST)
         gl.glClearColor(0f, 0f, 0f, 1f)
@@ -425,7 +442,6 @@ class MotomanGameApp(
         if (useBloom) {
             bloomFBA.bind()
             gl.glDisable(GL_DEPTH_TEST)
-            gl.glEnable(GL_TEXTURE_2D)
             gl.glEnable(GL_CULL_FACE)
             maskShader.bind()
             maskShader.setUniformi("isNoLightEffect", 1)
@@ -532,6 +548,8 @@ class MotomanGameApp(
     private companion object {
         /** Matches the original's `motorcycleStandByTimeRemaining = 2`. */
         const val STANDBY_SECONDS = 2f
+        /** Matches the original's `motorcycleCrashedTimeRemaining = 2`. */
+        const val CRASH_SECONDS = 2f
     }
 
 }
