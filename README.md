@@ -8,9 +8,11 @@ Blender was used to create, model, and export all the 3D environmental and chara
 - Random seed generated racing tracks, unlimited tracks as you progress the game.
 - Incoming corner type notification like rally car games.
 - Active camera that looks into the incoming corner apex.
-- Steer with touch-and-drag on Android and keyboard arrows on desktop.
+- Steer with touch-and-drag on Android and iOS, or keyboard arrows on desktop. Full lock is a
+  drag of a quarter of the screen width, so the same gesture steers the same amount everywhere.
 - Two separated steering controls: counter steering and leaning.
-- Supports using device tilt to lean (enabled natively via Android SensorManager and iOS CoreMotion).
+- Tilt the device forward to accelerate and back to brake, with a boost button for a burst of
+  full throttle (read natively via Android SensorManager and iOS CoreMotion).
 - A physical strength system to reduce the effectiveness of steering if too much action is inputted in a row.
 - Native GLSL shader effects (Bloom, Motion Blur, FXAA).
 

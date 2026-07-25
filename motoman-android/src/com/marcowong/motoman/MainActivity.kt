@@ -48,8 +48,8 @@ class MainActivity : ComponentActivity(), SensorEventListener, HardwareSensors {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         
-        val audio = com.marcowong.motoman.audio.AndroidAudio(this)
-        val haptics = com.marcowong.motoman.audio.AndroidHaptics(this)
+        val audio = AndroidAudio(this)
+        val haptics = AndroidHaptics(this)
         val trackData = TrackGenerator().generate() ?: error("Failed to generate track data")
         val config = RenderConfig.HIGH_QUALITY
         android.util.Log.i("Motoman", "RenderConfig: $config")
@@ -93,9 +93,7 @@ class MainActivity : ComponentActivity(), SensorEventListener, HardwareSensors {
                 AndroidView(factory = { glSurfaceView }, modifier = Modifier.fillMaxSize())
                 
                 // Shared UI layer handling touch drag steering and boost button
-                val metrics = resources.displayMetrics
-                val screenWidthPx = metrics.widthPixels.toFloat()
-                CommonGameOverlay(state = state, inputState = uiInputState, fullLockPx = screenWidthPx / 4f)
+                CommonGameOverlay(state = state, inputState = uiInputState)
             }
         }
     }

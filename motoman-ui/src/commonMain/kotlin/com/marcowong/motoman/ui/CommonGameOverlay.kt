@@ -19,8 +19,16 @@ import androidx.compose.ui.unit.sp
 import com.marcowong.motoman.GameState
 import com.marcowong.motoman.InputState
 
+/**
+ * Steering travel for full lock, as a fraction of the overlay's width. Derived from the
+ * surface the gesture actually happens on rather than passed in per platform, so a drag of
+ * the same relative distance steers the same amount on a phone, a tablet, and a desktop
+ * window — and so Android and iOS cannot drift apart.
+ */
+private const val FULL_LOCK_WIDTH_FRACTION = 0.25f
+
 @Composable
-fun CommonGameOverlay(state: GameState, inputState: InputState, fullLockPx: Float) {
+fun CommonGameOverlay(state: GameState, inputState: InputState) {
     Box(
         Modifier.fillMaxSize()
     ) {
@@ -29,6 +37,7 @@ fun CommonGameOverlay(state: GameState, inputState: InputState, fullLockPx: Floa
             Modifier
                 .fillMaxSize()
                 .pointerInput(Unit) {
+                    val fullLockPx = size.width * FULL_LOCK_WIDTH_FRACTION
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         inputState.steer = 0f

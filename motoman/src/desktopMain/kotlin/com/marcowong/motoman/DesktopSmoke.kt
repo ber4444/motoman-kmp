@@ -14,6 +14,17 @@ import com.marcowong.motoman.gl.GlslTarget
  *   --parity     render like the original 2013 game (half-res, point-sampled) instead of the
  *                default high-quality desktop preset (full-res, linearly filtered)
  *
+ * Individual render flags layer on top of whichever preset is selected, so one effect can be
+ * bisected at a time (e.g. `--parity --fb-linear` isolates framebuffer filtering):
+ *
+ *   --res R                       scene framebuffer size as a fraction of the output
+ *   --tex-linear / --tex-nearest  model texture filtering
+ *   --fb-linear / --fb-nearest    post-process buffer filtering
+ *   --no-bloom, --no-mb, --no-aa  turn off bloom / motion blur / anti-aliasing
+ *
+ * `GoldenSceneTest` drives this entry point with `--parity`, because the golden frame is an
+ * [RenderConfig.ORIGINAL] render.
+ *
  * Requires `-XstartOnFirstThread` on macOS; `:motoman:runDesktop` adds it there.
  */
 fun main(args: Array<String>) {
@@ -36,7 +47,24 @@ fun main(args: Array<String>) {
             glslTarget = GlslTarget.DESKTOP_120,
             audio = com.marcowong.motoman.audio.DesktopAudio(assets),
             haptics = com.marcowong.motoman.audio.DesktopHaptics(),
-            config = RenderConfig.HIGH_QUALITY,
+            // Default to the sharp desktop preset; --parity restores the original's look. Every
+            // individual flag still layers on top of whichever base, so bisecting one effect at a
+            // time (e.g. --parity --fb-linear) keeps working.
+            config = (if (argv.contains("--parity")) RenderConfig.ORIGINAL else RenderConfig.HIGH_QUALITY).let { base ->
+                fun flag(on: String, off: String, default: Boolean) = when {
+                    argv.contains(on) -> true
+                    argv.contains(off) -> false
+                    else -> default
+                }
+                base.copy(
+                    resolutionReduction = opt("--res")?.toFloatOrNull() ?: base.resolutionReduction,
+                    modelTextureLinearFilter = flag("--tex-linear", "--tex-nearest", base.modelTextureLinearFilter),
+                    frameBufferLinearFilter = flag("--fb-linear", "--fb-nearest", base.frameBufferLinearFilter),
+                    bloom = !argv.contains("--no-bloom"),
+                    motionBlur = !argv.contains("--no-mb"),
+                    antiAliasing = !argv.contains("--no-aa"),
+                )
+            },
             debugPositions = argv.contains("--debug-pos"),
         )
     } else {

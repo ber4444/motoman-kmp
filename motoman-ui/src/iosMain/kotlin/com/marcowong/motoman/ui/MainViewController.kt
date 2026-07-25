@@ -1,7 +1,5 @@
 package com.marcowong.motoman.ui
 
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.viewinterop.UIKitViewController
 import androidx.compose.ui.window.ComposeUIViewController
@@ -10,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.input.pointer.pointerInput
 import com.marcowong.motoman.IosGameHost
 import platform.UIKit.UIViewController
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -29,6 +26,6 @@ fun MainViewController(gameViewController: UIViewController, host: IosGameHost):
             ),
         )
         val state by host.app.gameStateFlow.state.collectAsState()
-        CommonGameOverlay(state = state, inputState = host.uiInputState, fullLockPx = 300f) // Hardcoded ~300f for iOS lock
+        CommonGameOverlay(state = state, inputState = host.uiInputState)
     }
 }
