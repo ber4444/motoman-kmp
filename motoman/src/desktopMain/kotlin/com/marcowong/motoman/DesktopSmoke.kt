@@ -36,24 +36,7 @@ fun main(args: Array<String>) {
             glslTarget = GlslTarget.DESKTOP_120,
             audio = com.marcowong.motoman.audio.DesktopAudio(assets),
             haptics = com.marcowong.motoman.audio.DesktopHaptics(),
-            // Default to the sharp desktop preset; --parity restores the original's look. Every
-            // individual flag still layers on top of whichever base, so bisecting one effect at a
-            // time (e.g. --parity --fb-linear) keeps working.
-            config = (if (argv.contains("--parity")) RenderConfig.ORIGINAL else RenderConfig.HIGH_QUALITY).let { base ->
-                fun flag(on: String, off: String, default: Boolean) = when {
-                    argv.contains(on) -> true
-                    argv.contains(off) -> false
-                    else -> default
-                }
-                base.copy(
-                    resolutionReduction = opt("--res")?.toFloatOrNull() ?: base.resolutionReduction,
-                    modelTextureLinearFilter = flag("--tex-linear", "--tex-nearest", base.modelTextureLinearFilter),
-                    frameBufferLinearFilter = flag("--fb-linear", "--fb-nearest", base.frameBufferLinearFilter),
-                    bloom = !argv.contains("--no-bloom"),
-                    motionBlur = !argv.contains("--no-mb"),
-                    antiAliasing = !argv.contains("--no-aa"),
-                )
-            },
+            config = RenderConfig.HIGH_QUALITY,
             debugPositions = argv.contains("--debug-pos"),
         )
     } else {

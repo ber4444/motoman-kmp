@@ -133,8 +133,6 @@ class GameViewController: UIViewController {
 /// A UIView backed by MGLLayer for MetalANGLE rendering.
 class MilkyWayGLView: UIView {
     private weak var host: IosGameHost?
-    private var steeringTouch: UITouch?
-    private var steeringStartX: CGFloat = 0
 
     override class var layerClass: AnyClass { return MGLLayer.self }
 
@@ -144,40 +142,9 @@ class MilkyWayGLView: UIView {
         contentScaleFactor = UIScreen.main.scale
         layer.contentsScale = UIScreen.main.scale
         isMultipleTouchEnabled = false
-        isUserInteractionEnabled = true
+        // Interaction is handled by Compose overlay
+        isUserInteractionEnabled = false
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) not supported") }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard steeringTouch == nil, let touch = touches.first else { return }
-
-        steeringTouch = touch
-        steeringStartX = touch.location(in: self).x
-        host?.setTilt(steer: 0)
-    }
-
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = steeringTouch, touches.contains(touch) else { return }
-
-        let fullLock = max(bounds.width / 5, 1)
-        let dx = touch.location(in: self).x - steeringStartX
-        let steer = Float(max(-1, min(1, dx / fullLock)))
-        host?.setTilt(steer: steer)
-    }
-
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = steeringTouch, touches.contains(touch) else { return }
-        resetSteeringTouch()
-    }
-
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard let touch = steeringTouch, touches.contains(touch) else { return }
-        resetSteeringTouch()
-    }
-
-    private func resetSteeringTouch() {
-        steeringTouch = nil
-        host?.setTilt(steer: 0)
-    }
 }

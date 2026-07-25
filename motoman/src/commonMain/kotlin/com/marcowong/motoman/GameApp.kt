@@ -9,6 +9,7 @@ class InputState {
     var brake: Float = 0f      // 0 .. 1
     var shiftUp: Boolean = false
     var shiftDown: Boolean = false
+    var boostPressed: Boolean = false
 }
 
 /**

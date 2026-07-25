@@ -18,30 +18,14 @@ package com.marcowong.motoman
  * is impossible while these are hardcoded inside the renderer.
  */
 data class RenderConfig(
-    /** Scene is rendered into a framebuffer this fraction of the output size. Original: 1/2. */
-    val resolutionReduction: Float = 0.5f,
-    /** Original: false — model textures are point-sampled. */
-    val modelTextureLinearFilter: Boolean = false,
-    /** Original: false — post-process buffers are point-sampled. */
-    val frameBufferLinearFilter: Boolean = false,
+    val resolutionReduction: Float = 1f,
+    val modelTextureLinearFilter: Boolean = true,
+    val frameBufferLinearFilter: Boolean = true,
     val bloom: Boolean = true,
     val motionBlur: Boolean = true,
     val antiAliasing: Boolean = true,
 ) {
     companion object {
-        /** The original game's settings. */
-        val ORIGINAL = RenderConfig()
-
-        /**
-         * Sharper-than-original preset for desktop, where the half-resolution look is a
-         * limitation rather than a goal: the scene renders at full output resolution and both
-         * model textures and post-process buffers are linearly filtered. Effects (bloom, motion
-         * blur, AA) stay on. Not used for parity captures — [ORIGINAL] is the golden baseline.
-         */
-        val HIGH_QUALITY = RenderConfig(
-            resolutionReduction = 1f,
-            modelTextureLinearFilter = true,
-            frameBufferLinearFilter = true,
-        )
+        val HIGH_QUALITY = RenderConfig()
     }
 }
