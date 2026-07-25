@@ -36,6 +36,11 @@ data class RenderConfig(
     val bloom: Boolean = true,
     val motionBlur: Boolean = true,
     val antiAliasing: Boolean = true,
+    /** 
+     * The fixed height of the bloom mask framebuffer. Original: 48.
+     * If null, the bloom mask is rendered at the full scene height.
+     */
+    val bloomMaskResolution: Int? = 48,
 ) {
     companion object {
         /** The shipping configuration on every platform: full resolution, linearly filtered. */
@@ -46,6 +51,7 @@ data class RenderConfig(
             resolutionReduction = 0.5f,
             modelTextureLinearFilter = false,
             frameBufferLinearFilter = false,
+            bloomMaskResolution = 48,
         )
     }
 }
