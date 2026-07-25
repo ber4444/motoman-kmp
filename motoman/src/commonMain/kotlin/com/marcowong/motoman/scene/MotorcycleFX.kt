@@ -168,8 +168,13 @@ class MotorcycleFX(private val gl: Gl, private val assets: Assets, private val t
             meshData.indices = indices
             meshData.hasNorms = true
             meshData.hasUVs = true
-            meshData.hasSkeleton = false
-            // vertexSize is val
+            // Each vertex below is written with a trailing skeleton slot (9 floats, see setV),
+            // so the layout must declare it. Claiming no skeleton makes MeshData.vertexSize 8
+            // while the data is strided 9, and MeshOptimized then re-reads every vertex past
+            // the first at the wrong offset: corner 1 becomes (0, p2.x, p2.y), a point near the
+            // world origin. The quad stretches from the particle to there and draws as a long
+            // white "ray" across the screen.
+            meshData.hasSkeleton = true
 
             fun setV(idx: Int, p: Vector3, u: Float, v: Float) {
                 val offset = idx * 9

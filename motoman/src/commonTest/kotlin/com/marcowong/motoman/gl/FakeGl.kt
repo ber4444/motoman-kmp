@@ -18,6 +18,10 @@ class FakeGl : Gl {
     var lastTexImageFormat: Int = -1
         private set
 
+    /** Last vertex payload handed to glBufferData, so tests can assert packed geometry. */
+    var lastVertexUpload: FloatArray? = null
+        private set
+
     var compileStatus = true
     var linkStatus = true
 
@@ -37,7 +41,7 @@ class FakeGl : Gl {
 
     override fun glGenBuffer(): Int { calls += "glGenBuffer()"; return nextBuffer++ }
     override fun glBindBuffer(target: Int, buffer: Int) { calls += "glBindBuffer($target,$buffer)" }
-    override fun glBufferData(target: Int, data: FloatArray, usage: Int) { calls += "glBufferData($target,f${data.size},$usage)" }
+    override fun glBufferData(target: Int, data: FloatArray, usage: Int) { calls += "glBufferData($target,f${data.size},$usage)"; lastVertexUpload = data }
     override fun glBufferData(target: Int, data: ShortArray, usage: Int) { calls += "glBufferData($target,s${data.size},$usage)" }
     override fun glDeleteBuffer(buffer: Int) { calls += "glDeleteBuffer($buffer)" }
 
