@@ -5,12 +5,12 @@ This is a Kotlin Multiplatform motorcycle racing game, ported from https://githu
 Blender was used to create, model, and export all the 3D environmental and character assets (such as the motorcycle, rider, buildings, and skybox) as .obj and .mtl files for rendering within the game.
 
 ### Features
-- Random seed generated racing tracks, unlimited tracks as you progress the game.
+- Random seed generated racing track of a fixed length.
 - Incoming corner type notification like rally car games.
 - Active camera that looks into the incoming corner apex.
 - Steer with touch-and-drag on Android and iOS, or keyboard arrows on desktop. Full lock is a
   drag of a quarter of the screen width, so the same gesture steers the same amount everywhere.
-- Two separated steering controls: counter steering and leaning.
+  The underlying physics engine dynamically translates this single input into either counter-steering or leaning.
 - Tilt the device forward to accelerate and back to brake, with a boost button for a burst of
   full throttle (read natively via Android SensorManager and iOS CoreMotion).
 - A physical strength system to reduce the effectiveness of steering if too much action is inputted in a row.
@@ -60,7 +60,7 @@ While structured as a standard Kotlin Multiplatform (KMP) project, this game fea
 
 - **Engine-less Design:** Instead of relying on a heavyweight game engine, the game is built entirely from scratch in Kotlin.
 - **Custom Abstracted `Gl` Interface:** The core rendering logic is entirely platform-agnostic. It runs against a custom `Gl` interface which directly maps to `android.opengl.GLES20` on Android, **MetalANGLE** (which translates OpenGL ES to Metal) on iOS, and `LWJGL GL11/20` on Desktop, guaranteeing high-performance native execution across all platforms.
-- **Native UI Overlay:** Instead of drawing the Heads-Up Display (HUD) and menus within the OpenGL context, the game relies on native UI toolkits. On Android and iOS, the HUD is built entirely in Compose Multiplatform, effortlessly overlaying the `GLSurfaceView` and **SwiftUI** views (via `MGLKView`).
+- **Native UI Overlay:** Instead of drawing the Heads-Up Display (HUD) and menus within the OpenGL context, the game relies on native UI toolkits. On Android and iOS, the HUD is built entirely in Compose Multiplatform, effortlessly overlaying the `GLSurfaceView` and native iOS views (via a custom `UIView` backed by `MGLLayer`).
 - **Custom Asset Pipeline:** Features a bespoke, lightweight `.obj` and `.mtl` parser written in pure Kotlin to load 3D assets and materials directly into the rendering pipeline.
 - **Native Shaders:** Advanced visual effects like Bloom, Motion Blur, and FXAA are implemented directly via custom GLSL shaders executing natively against the platform's graphics hardware.
-- **What is NOT in Kotlin:** The absolute outermost platform shell. On iOS, the main app entry point and bridging views are written in **Swift** and **SwiftUI**. This is because directly managing the iOS app lifecycle, hooking into `MGLKViewController` for the native render loop, and managing the `MGLContext` via MetalANGLE is best done in the platform's native language. Swift simply constructs the OpenGL-compatible context on top of Metal and hands it off to the shared Kotlin engine.
+- **What is NOT in Kotlin:** The absolute outermost platform shell. On iOS, the main app entry point and bridging views are written in **Swift** and **UIKit**. This is because directly managing the iOS app lifecycle, driving the `CADisplayLink` render loop via a custom `UIViewController`, and managing the `MGLContext` via MetalANGLE is best done in the platform's native language. Swift simply constructs the OpenGL-compatible context on top of Metal and hands it off to the shared Kotlin engine.
