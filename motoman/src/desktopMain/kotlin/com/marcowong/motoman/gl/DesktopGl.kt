@@ -13,6 +13,8 @@ actual fun createPlatformGl(): Gl = DesktopGl()
 
 private class DesktopGl : Gl {
 
+    override val defaultFramebuffer: Int = 0
+
     override fun glViewport(x: Int, y: Int, width: Int, height: Int) = GL11.glViewport(x, y, width, height)
     override fun glClear(mask: Int) = GL11.glClear(mask)
     override fun glClearColor(red: Float, green: Float, blue: Float, alpha: Float) = GL11.glClearColor(red, green, blue, alpha)

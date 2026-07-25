@@ -13,10 +13,10 @@ enum class PixmapFormat(val components: Int) {
  * Decoding itself has no `commonMain` answer, so it lives behind [decodePixmap].
  */
 class Pixmap(
-    @JvmField val width: Int,
-    @JvmField val height: Int,
-    @JvmField val format: PixmapFormat,
-    @JvmField val pixels: ByteArray,
+    val width: Int,
+    val height: Int,
+    val format: PixmapFormat,
+    val pixels: ByteArray,
 ) {
     init {
         val expected = width * height * format.components

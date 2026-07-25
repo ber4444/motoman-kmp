@@ -1,7 +1,7 @@
 [versions]
 agp = "8.3.2"
-kotlin = "1.9.23"
-compose = "1.6.1"
+kotlin = "2.0.21"
+compose = "1.7.0"
 lwjgl = "3.3.3"
 coroutines = "1.8.0"
 
@@ -11,6 +11,7 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose" }
 
 [libraries]

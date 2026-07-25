@@ -5,8 +5,8 @@ package com.marcowong.motoman.track.math
  * limited to what the engine's portal-frustum culling uses.
  */
 class Plane {
-    @JvmField val normal = Vector3()
-    @JvmField var d: Float = 0f
+    val normal = Vector3()
+    var d: Float = 0f
 
     enum class PlaneSide { OnPlane, Back, Front }
 

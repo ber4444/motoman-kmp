@@ -10,27 +10,27 @@ import kotlin.math.max
 import kotlin.math.min
 
 class Rider(var  track: Track) : ITrackee {
-    @JvmField var  motorcycle: Motorcycle? = null
-    @JvmField var  poseStandBy: Pose? = null
-    @JvmField var  poseGo: Pose? = null
+    var  motorcycle: Motorcycle? = null
+    var  poseStandBy: Pose? = null
+    var  poseGo: Pose? = null
 
     inner class UpdateState {
-        @JvmField var lastTrackSegment: TrackSegment? = null
-        @JvmField var attached = true
-        @JvmField var detachedVelo = Vector3()
-        @JvmField var detachedPos = Matrix4()
-        @JvmField var strength = 1f
-        @JvmField var pose = Pose()
-        @JvmField var poseSrc = Pose()
-        @JvmField var poseDst: Pose? = null
-        @JvmField var poseDst2: Pose? = null
-        @JvmField var poseTime = 0f
-        @JvmField var poseTimeRemaining = 0f
-        @JvmField var directionCurrent = 0
-        @JvmField var directionNoticed = 0
-        @JvmField var bodyShiftTarget = 0f
-        @JvmField var bodyExposeTarget = 1f
-        @JvmField var leanReadingSmoothed = 0f
+        var lastTrackSegment: TrackSegment? = null
+        var attached = true
+        var detachedVelo = Vector3()
+        var detachedPos = Matrix4()
+        var strength = 1f
+        var pose = Pose()
+        var poseSrc = Pose()
+        var poseDst: Pose? = null
+        var poseDst2: Pose? = null
+        var poseTime = 0f
+        var poseTimeRemaining = 0f
+        var directionCurrent = 0
+        var directionNoticed = 0
+        var bodyShiftTarget = 0f
+        var bodyExposeTarget = 1f
+        var leanReadingSmoothed = 0f
 
         fun copyTo(s: UpdateState) {
             s.lastTrackSegment = lastTrackSegment
@@ -52,23 +52,23 @@ class Rider(var  track: Track) : ITrackee {
         }
     }
 
-    @JvmField val  statePersist = UpdateState()
-    @JvmField val  stateTmp = UpdateState()
-    @JvmField var  state = statePersist
+    val  statePersist = UpdateState()
+    val  stateTmp = UpdateState()
+    var  state = statePersist
 
     class Pose {
-        @JvmField val matHip = Matrix4()
-        @JvmField val matWaist = Matrix4()
-        @JvmField val matChest = Matrix4()
-        @JvmField val matHead = Matrix4()
-        @JvmField val matArmUpperL = Matrix4()
-        @JvmField val matArmLowerL = Matrix4()
-        @JvmField val matArmUpperR = Matrix4()
-        @JvmField val matArmLowerR = Matrix4()
-        @JvmField val matLegUpperL = Matrix4()
-        @JvmField val matLegLowerL = Matrix4()
-        @JvmField val matLegUpperR = Matrix4()
-        @JvmField val matLegLowerR = Matrix4()
+        val matHip = Matrix4()
+        val matWaist = Matrix4()
+        val matChest = Matrix4()
+        val matHead = Matrix4()
+        val matArmUpperL = Matrix4()
+        val matArmLowerL = Matrix4()
+        val matArmUpperR = Matrix4()
+        val matArmLowerR = Matrix4()
+        val matLegUpperL = Matrix4()
+        val matLegLowerL = Matrix4()
+        val matLegUpperR = Matrix4()
+        val matLegLowerR = Matrix4()
 
         fun set(p: Pose) {
             matHip.set(p.matHip)

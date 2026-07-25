@@ -9,48 +9,48 @@ import kotlin.math.min
 import kotlin.math.sign
 
 class Motorcycle(
-    @JvmField var  track: Track,
+    var  track: Track,
     private val inputMeters: IMotorcycleInputMeters
 ) : ITrackee {
     
-    @JvmField var  rider: Rider? = null
+    var  rider: Rider? = null
     
-    @JvmField var  massCenterHeight = 0f
-    @JvmField var  leanAngleMaxWhenRunning = 0f
-    @JvmField var  leanAngleSafe = 0f
+    var  massCenterHeight = 0f
+    var  leanAngleMaxWhenRunning = 0f
+    var  leanAngleSafe = 0f
 
     // Lean-feel knobs, defaulted to the original game's values so the physics-replay parity
     // test is unaffected. The app lowers them (see MainMotorcycle) for a gentler ride where a
     // held turn does not run its lean away into a crash.
     /** Rate at which counter-steering tips the bike into a lean while turning in (upright). */
-    @JvmField var  counterSteeringLeanInc = 90f
+    var  counterSteeringLeanInc = 90f
     /** Rate at which the lean meter deepens an already-established lean. */
-    @JvmField var  leanAnglePressure = 90f
+    var  leanAnglePressure = 90f
     /** Self-reinforcing "fall over" force that deepens an existing lean; the runaway term. */
-    @JvmField var  gravityForceWhenRunning = 25f
+    var  gravityForceWhenRunning = 25f
     
     private val engineOutputMin = 20f
     private val engineOutputMax = 200f
 
     class UpdateState {
-        @JvmField var leanAngle = 0f
-        @JvmField var isCrashed = false
-        @JvmField var isStandBy = true
-        @JvmField var engineOutput = 20f // engineOutputMin
-        @JvmField var frontTraction = 1f
-        @JvmField var backTraction = 1f
-        @JvmField var slideDuration = 0f
-        @JvmField var isTouchingGround = false
-        @JvmField val bikeVelo = Vector3()
-        @JvmField val pos = Matrix4()
-        @JvmField val lean = Matrix4()
-        @JvmField val frontWheelRot = Matrix4()
-        @JvmField val rearWheelRot = Matrix4()
-        @JvmField var latestCounterSteeringPositionShift = 0f
-        @JvmField var lastTrackSegment: TrackSegment? = null
+        var leanAngle = 0f
+        var isCrashed = false
+        var isStandBy = true
+        var engineOutput = 20f // engineOutputMin
+        var frontTraction = 1f
+        var backTraction = 1f
+        var slideDuration = 0f
+        var isTouchingGround = false
+        val bikeVelo = Vector3()
+        val pos = Matrix4()
+        val lean = Matrix4()
+        val frontWheelRot = Matrix4()
+        val rearWheelRot = Matrix4()
+        var latestCounterSteeringPositionShift = 0f
+        var lastTrackSegment: TrackSegment? = null
         
-        @JvmField var justCrashed = false
-        @JvmField var lastBackfireSize = 0f
+        var justCrashed = false
+        var lastBackfireSize = 0f
 
         fun copyTo(s: UpdateState) {
             s.leanAngle = leanAngle
@@ -73,9 +73,9 @@ class Motorcycle(
         }
     }
 
-    @JvmField val  stateTmp = UpdateState()
-    @JvmField val  statePersist = UpdateState()
-    @JvmField var  state = statePersist
+    val  stateTmp = UpdateState()
+    val  statePersist = UpdateState()
+    var  state = statePersist
 
     init {
         inputMeters.setMotorcycle(this)

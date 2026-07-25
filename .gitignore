@@ -22,6 +22,8 @@ build/
 *.apk
 *.so
 *.log
+*.xcodeproj/
+*.xcworkspace/
 
 # The Gradle wrapper jar must be committed despite the blanket *.jar rule above,
 # otherwise ./gradlew does not work on a fresh clone.

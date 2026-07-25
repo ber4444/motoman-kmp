@@ -64,7 +64,6 @@ class SceneTrack(
         trackModel.subMeshes.forEach { sub ->
             sub.material?.diffuseTextureName?.let { name ->
                 val texture = textures.get(name)
-                texture.setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge)
                 sub.material!!.diffuseTexture = texture
             }
         }
@@ -76,7 +75,6 @@ class SceneTrack(
         lampModel.subMeshes.forEach { sub ->
             sub.material?.diffuseTextureName?.let { name ->
                 val texture = textures.get(name)
-                texture.setWrap(TextureWrap.ClampToEdge, TextureWrap.ClampToEdge)
                 sub.material!!.diffuseTexture = texture
             }
         }

@@ -4,11 +4,11 @@ import com.marcowong.motoman.gl.Gl
 
 /** Digital inputs the game reads, mapped from keyboard on desktop and tilt/touch on Android. */
 class InputState {
-    @JvmField var steer: Float = 0f      // -1 left .. +1 right
-    @JvmField var throttle: Float = 0f   // 0 .. 1
-    @JvmField var brake: Float = 0f      // 0 .. 1
-    @JvmField var shiftUp: Boolean = false
-    @JvmField var shiftDown: Boolean = false
+    var steer: Float = 0f      // -1 left .. +1 right
+    var throttle: Float = 0f   // 0 .. 1
+    var brake: Float = 0f      // 0 .. 1
+    var shiftUp: Boolean = false
+    var shiftDown: Boolean = false
 }
 
 /**
