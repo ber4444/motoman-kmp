@@ -258,3 +258,87 @@ class MeshOptimizedIndexLimitTest {
         assertEquals(1000, batch.totalVertices)
     }
 }
+
+/**
+ * The particle decals in `MotorcycleFX` are built by hand as 9-float vertices (position,
+ * normal, UV, skeleton slot). The layout flags on [MeshData] are what tells [MeshOptimized]
+ * the source stride, so they have to agree with how the floats were actually written.
+ *
+ * They did not: the quad declared `hasSkeleton = false`, making `vertexSize` 8 while the data
+ * was strided 9. Every vertex past the first was then re-read one float short, and corner 1's
+ * position came back as `(0, p2.x, p2.y)` — a point near the world origin. The decal stretched
+ * from the particle all the way there and drew as a long white "ray" across the screen,
+ * most visible after a crash when the camera pulls back over the wreck.
+ */
+class MeshOptimizedParticleQuadTest {
+
+    private val corners = arrayOf(
+        floatArrayOf(10f, 1f, 80f),
+        floatArrayOf(11f, 1f, 80f),
+        floatArrayOf(11f, 2f, 80f),
+        floatArrayOf(10f, 2f, 80f),
+    )
+
+    /** Builds a decal quad exactly the way MotorcycleFX.render does. */
+    private fun decalQuad(): ModelData {
+        val vertices = FloatArray(4 * 9)
+        for (i in 0 until 4) {
+            val o = i * 9
+            vertices[o] = corners[i][0]
+            vertices[o + 1] = corners[i][1]
+            vertices[o + 2] = corners[i][2]
+            vertices[o + 3] = 1f // alpha, smuggled through normal.x
+            vertices[o + 6] = if (i == 1 || i == 2) 1f else 0f // u
+            vertices[o + 7] = if (i < 2) 1f else 0f            // v
+            vertices[o + 8] = 0f // skeleton slot
+        }
+        val mesh = MeshData().also {
+            it.vertices = vertices
+            it.indices = shortArrayOf(0, 1, 2, 2, 3, 0)
+            it.hasNorms = true
+            it.hasUVs = true
+            it.hasSkeleton = true
+        }
+        return ModelData().also { model ->
+            model.subMeshes = arrayOf(SubMeshData().also { it.mesh = mesh; it.material = MaterialData("spark") })
+        }
+    }
+
+    @Test
+    fun declaredLayoutMatchesTheNineFloatStrideActuallyWritten() {
+        val mesh = decalQuad().subMeshes[0].mesh!!
+        assertEquals(9, mesh.vertexSize, "decal vertices are written 9 floats apart")
+        assertEquals(4, mesh.numVertices, "a decal is one quad: exactly four corners")
+    }
+
+    @Test
+    fun packsAllFourCornersWithoutStretchingTheQuad() {
+        val gl = FakeGl()
+        val batch = MeshOptimized(gl)
+        batch.add(decalQuad())
+        batch.optimize()
+
+        val packed = gl.lastVertexUpload!!
+        assertEquals(4 * MeshOptimized.VERTEX_FLOATS, packed.size, "four distinct corners survive")
+        for (i in 0 until 4) {
+            val o = i * MeshOptimized.VERTEX_FLOATS
+            assertEquals(corners[i][0], packed[o], "corner $i x")
+            assertEquals(corners[i][1], packed[o + 1], "corner $i y")
+            assertEquals(corners[i][2], packed[o + 2], "corner $i z")
+        }
+    }
+
+    @Test
+    fun everyCornerStaysWithinTheQuadRatherThanReachingTheWorldOrigin() {
+        val gl = FakeGl()
+        MeshOptimized(gl).also { it.add(decalQuad()); it.optimize() }
+        val packed = gl.lastVertexUpload!!
+        // The bug's signature: a corner collapsing toward (0, ..) instead of sitting on the
+        // quad, which is what turned a 1-unit puff into a screen-long ray.
+        for (i in 0 until packed.size / MeshOptimized.VERTEX_FLOATS) {
+            val o = i * MeshOptimized.VERTEX_FLOATS
+            assertTrue(packed[o] >= 9f, "corner $i x drifted off the quad: ${packed[o]}")
+            assertTrue(packed[o + 2] >= 79f, "corner $i z drifted off the quad: ${packed[o + 2]}")
+        }
+    }
+}
