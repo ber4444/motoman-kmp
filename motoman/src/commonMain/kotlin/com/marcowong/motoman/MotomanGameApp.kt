@@ -304,7 +304,7 @@ class MotomanGameApp(
         val sceneHeight = kotlin.math.max(1, (height * config.resolutionReduction).toInt())
         mainFrameBufferA = FrameBuffer(gl, sceneWidth, sceneHeight, true)
         mainFrameBufferB = FrameBuffer(gl, sceneWidth, sceneHeight, true)
-        val bloomSize = 48
+        val bloomSize = config.bloomMaskResolution ?: sceneHeight
         bloomFrameBufferA = FrameBuffer(gl, kotlin.math.ceil(aspectRatio * bloomSize).toInt(), bloomSize, true)
         bloomFrameBufferB = FrameBuffer(gl, kotlin.math.ceil(aspectRatio * bloomSize).toInt(), bloomSize, true)
         
@@ -511,7 +511,8 @@ class MotomanGameApp(
             bloomFBB.bind()
             gl.glDisable(GL_DEPTH_TEST)
             ppBloom1Shader.bind()
-            ppBloom1Shader.setUniformf("blurSize", 1f / bloomFBA.width)
+            val blurScaleA = bloomFBA.height / 48f
+            ppBloom1Shader.setUniformf("blurSize", blurScaleA / bloomFBA.width)
             bloomFBA.texture.bind(0)
             frameBufferMeshContext.render(ppBloom1Shader)
             gl.glUseProgram(0)
@@ -520,7 +521,8 @@ class MotomanGameApp(
             bloomFBA.bind()
             gl.glDisable(GL_DEPTH_TEST)
             ppBloom2Shader.bind()
-            ppBloom2Shader.setUniformf("blurSize", 1f / bloomFBB.height)
+            val blurScaleB = bloomFBB.height / 48f
+            ppBloom2Shader.setUniformf("blurSize", blurScaleB / bloomFBB.height)
             bloomFBB.texture.bind(0)
             frameBufferMeshContext.render(ppBloom2Shader)
             gl.glUseProgram(0)
