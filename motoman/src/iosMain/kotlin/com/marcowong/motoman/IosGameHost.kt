@@ -16,22 +16,38 @@ import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
 import kotlinx.cinterop.convert
 import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.useContents
 import platform.gles2.GL_FRAMEBUFFER_BINDING
 import platform.gles2.glGetIntegerv
+import platform.CoreMotion.CMMotionManager
+import platform.Foundation.NSOperationQueue
 
-class IosGameHost(private val debugGl: Boolean = false) {
+class IosGameHost(private val debugGl: Boolean = false) : HardwareSensors {
     var glErrorCount: Int = 0
         private set
 
     lateinit var app: MotomanGameApp
     private lateinit var rawGl: Gl
     private var debug: GlDebug? = null
-    private val input = InputState()
     
-    // Default throttle to 0.7f as per Android's MAX_THROTTLE cap.
-    init {
-        input.throttle = 0.7f
-    }
+    // UI input state populated by CommonGameOverlay (via MainViewController)
+    val uiInputState = InputState()
+    
+    // Game logic input controller
+    private lateinit var inputController: InputController
+
+    private val motionManager = CMMotionManager()
+    
+    override val devicePitch: Float
+        get() {
+            // Forward/back tilt axis is Y on iOS when held in landscape (assuming typical orientation handling).
+            val gravity = motionManager.deviceMotion?.gravity
+            return if (gravity != null) {
+                gravity.useContents { (y * 9.8).toFloat() }
+            } else {
+                0f
+            }
+        }
 
     fun create(widthPx: Int, heightPx: Int) {
         rawGl = createPlatformGl()
@@ -45,6 +61,13 @@ class IosGameHost(private val debugGl: Boolean = false) {
 
         app = MotomanGameApp(assets, trackData, GlslTarget.ES_100, audio, haptics, RenderConfig.HIGH_QUALITY)
         app.create(gl, widthPx, heightPx)
+        
+        inputController = InputController(this)
+        
+        if (motionManager.isDeviceMotionAvailable()) {
+            motionManager.deviceMotionUpdateInterval = 1.0 / 60.0
+            motionManager.startDeviceMotionUpdates()
+        }
     }
 
     fun resize(widthPx: Int, heightPx: Int) {
@@ -52,7 +75,6 @@ class IosGameHost(private val debugGl: Boolean = false) {
     }
 
     fun render(dtSeconds: Float) {
-        // Read the default FBO from GLKit
         val fbo = memScoped {
             val v = alloc<IntVar>()
             glGetIntegerv(GL_FRAMEBUFFER_BINDING.convert(), v.ptr)
@@ -67,21 +89,16 @@ class IosGameHost(private val debugGl: Boolean = false) {
             currentGl.defaultFramebuffer = fbo
         }
 
-        app.update(dtSeconds.coerceAtMost(1f / 15f), input)
+        val finalInput = inputController.update(dtSeconds.coerceAtMost(1f / 15f), uiInputState)
+
+        app.update(dtSeconds.coerceAtMost(1f / 15f), finalInput)
         app.render()
         
         glErrorCount = debug?.errorCount ?: 0
     }
 
     fun dispose() {
+        motionManager.stopDeviceMotionUpdates()
         app.dispose()
-    }
-
-    fun setSteer(steer: Float) {
-        input.steer = steer.coerceIn(-1f, 1f)
-    }
-
-    fun setTilt(steer: Float) {
-        setSteer(steer)
     }
 }

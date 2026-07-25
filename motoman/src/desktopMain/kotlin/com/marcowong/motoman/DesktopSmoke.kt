@@ -14,6 +14,17 @@ import com.marcowong.motoman.gl.GlslTarget
  *   --parity     render like the original 2013 game (half-res, point-sampled) instead of the
  *                default high-quality desktop preset (full-res, linearly filtered)
  *
+ * Individual render flags layer on top of whichever preset is selected, so one effect can be
+ * bisected at a time (e.g. `--parity --fb-linear` isolates framebuffer filtering):
+ *
+ *   --res R                       scene framebuffer size as a fraction of the output
+ *   --tex-linear / --tex-nearest  model texture filtering
+ *   --fb-linear / --fb-nearest    post-process buffer filtering
+ *   --no-bloom, --no-mb, --no-aa  turn off bloom / motion blur / anti-aliasing
+ *
+ * `GoldenSceneTest` drives this entry point with `--parity`, because the golden frame is an
+ * [RenderConfig.ORIGINAL] render.
+ *
  * Requires `-XstartOnFirstThread` on macOS; `:motoman:runDesktop` adds it there.
  */
 fun main(args: Array<String>) {

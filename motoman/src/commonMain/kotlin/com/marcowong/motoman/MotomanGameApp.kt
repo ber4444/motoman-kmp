@@ -90,7 +90,7 @@ class MotomanGameApp(
     private val glslTarget: GlslTarget,
     private val audio: Audio,
     private val haptics: Haptics,
-    private val config: RenderConfig = RenderConfig.ORIGINAL,
+    private val config: RenderConfig = RenderConfig.HIGH_QUALITY,
     /** Desktop-only: log the bike's world x,z each step for steering direction tests. */
     debugPositions: Boolean = false,
 ) : GameApp {
