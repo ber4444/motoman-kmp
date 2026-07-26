@@ -28,3 +28,6 @@ build/
 # The Gradle wrapper jar must be committed despite the blanket *.jar rule above,
 # otherwise ./gradlew does not work on a fresh clone.
 !gradle/wrapper/gradle-wrapper.jar
+
+# Swift Package Manager
+.swiftpm/
