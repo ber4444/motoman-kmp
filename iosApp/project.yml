@@ -18,6 +18,7 @@ targets:
     info:
       path: iosApp/Info.plist
       properties:
+        CADisableMinimumFrameDurationOnPhone: true
         UILaunchStoryboardName: LaunchScreen
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationLandscapeLeft
