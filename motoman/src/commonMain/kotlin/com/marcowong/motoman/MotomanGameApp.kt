@@ -393,6 +393,19 @@ class MotomanGameApp(
         if (crashedTimeRemaining > 0f) crashedTimeRemaining -= delta
         val logic = motorcycle.logic
 
+        if (track.logic.isInTrackEnd(logic) && !crashedPending) {
+            logic.reset()
+            val m = track.logic.getStartSpawnPosition()
+            m.`val`.copyInto(logic.state.pos.`val`, 0, 0, 16)
+            logic.setLastTrackSegment(track.logic.trackSegmentsOfStart[4])
+            rider.logic.setLastTrackSegment(track.logic.trackSegmentsOfStart[4])
+            lastCameraViewReset = true
+            
+            standByPending = true
+            standByTimeRemaining = STANDBY_SECONDS
+            return
+        }
+
         // Crash -> wait -> respawn at the track's spawn point, then stand by again.
         if (!crashedPending && logic.state.isCrashed) {
             crashedPending = true
